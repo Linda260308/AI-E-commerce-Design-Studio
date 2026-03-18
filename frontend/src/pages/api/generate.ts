@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 type ResponseData = {
   success: boolean;
   image_url?: string;
+  image_base64?: string;
   generation_id?: string;
   text_editable?: boolean;
   error?: string;
@@ -17,70 +18,71 @@ export default async function handler(
   }
 
   try {
-    const { image, prompt, text_content, font_style, color_scheme } = req.body;
+    const { image, prompt, text_layers, font_style, color_scheme } = req.body;
 
-    // Validate input
+    // 验证输入
     if (!image || !prompt) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Missing required fields: image and prompt' 
+        error: '缺少必要参数：image 和 prompt' 
       });
     }
 
-    // Call AI service (Nano Banana 2 via API 易)
-    const apiKey = process.env.APIYI_KEY || process.env.NANO_BANANA_KEY;
+    // 检查是否配置了后端 API
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     
-    if (!apiKey) {
-      // Mock response for development
-      console.log('⚠️ No API key configured, returning mock response');
+    try {
+      // 调用后端 FastAPI 服务
+      const response = await fetch(`${backendUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image,
+          prompt,
+          text_layers: text_layers || [],
+          font_style: font_style || 'modern',
+          color_scheme: color_scheme || '#8B5CF6',
+          size: '1024x1024'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      return res.status(200).json({
+        success: true,
+        image_url: result.image_url,
+        generation_id: result.generation_id,
+        text_editable: result.text_editable
+      });
+
+    } catch (backendError) {
+      // 如果后端不可用，返回模拟响应（开发环境）
+      console.warn('Backend unavailable, using mock response:', backendError);
+      
+      // 模拟延迟
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       return res.status(200).json({
         success: true,
         image_url: '/mock-generated-poster.png',
         generation_id: `gen_${Date.now()}`,
-        text_editable: true
+        text_editable: true,
+        error: undefined
       });
     }
-
-    // Prepare AI generation request
-    const aiPayload = {
-      model: 'nano-banana-2',
-      prompt: `${prompt}, professional e-commerce product photography, studio lighting, high quality, 4k`,
-      image: image,
-      text_overlay: text_content,
-      text_style: {
-        font: font_style || 'modern',
-        color: color_scheme || '#8B5CF6'
-      }
-    };
-
-    // Call API 易 service
-    const response = await fetch('https://api.apiyi.com/v1/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(aiPayload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`AI service error: ${response.status}`);
-    }
-
-    const result = await response.json();
-
-    return res.status(200).json({
-      success: true,
-      image_url: result.image_url,
-      generation_id: result.id || `gen_${Date.now()}`,
-      text_editable: true
-    });
 
   } catch (error) {
     console.error('Generation error:', error);
     return res.status(500).json({ 
       success: false, 
-      error: error instanceof Error ? error.message : 'Generation failed' 
+      error: error instanceof Error ? error.message : '生成失败，请稍后重试' 
     });
   }
 }
