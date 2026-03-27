@@ -31,6 +31,7 @@ export default function Editor() {
   const [productPosition, setProductPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [draggingTextId, setDraggingTextId] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const productImgRef = useRef<HTMLImageElement>(null);
 
@@ -163,17 +164,39 @@ export default function Editor() {
     });
   };
 
+  // 文字拖拽处理
+  const handleTextMouseDown = (e: React.MouseEvent, layerId: string) => {
+    e.stopPropagation();
+    setDraggingTextId(layerId);
+    const layer = textLayers.find(l => l.id === layerId);
+    if (layer) {
+      setDragStart({
+        x: e.clientX - layer.x,
+        y: e.clientY - layer.y,
+      });
+    }
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
       setProductPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
       });
+    } else if (draggingTextId) {
+      const layer = textLayers.find(l => l.id === draggingTextId);
+      if (layer) {
+        updateTextLayer(draggingTextId, {
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y,
+        });
+      }
     }
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    setDraggingTextId(null);
   };
 
   // 下载海报 - 使用 canvas 合成图片
@@ -361,7 +384,7 @@ export default function Editor() {
                   ) : (
                     <>
                       <span>✂️</span>
-                      <span className="ml-1">Remove BG</span>
+                      <span className="ml-1">Remove Background</span>
                     </>
                   )}
                 </button>
@@ -548,6 +571,7 @@ export default function Editor() {
                           selectTextLayer(layer.id);
                           setShowTextTools(true);
                         }}
+                        onMouseDown={(e) => handleTextMouseDown(e, layer.id)}
                         className={`absolute cursor-move p-1 hover:bg-purple-100 rounded ${
                           selectedLayerId === layer.id ? 'ring-2 ring-purple-500' : ''
                         }`}
