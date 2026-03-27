@@ -1,0 +1,491 @@
+import { useState, useRef } from 'react';
+import { Stage, Layer, Image as KonvaImage, Text } from 'react-konva';
+import { usePosterStore } from '../store/posterStore';
+import { useDropzone } from 'react-dropzone';
+import Link from 'next/link';
+
+export default function Editor() {
+  const {
+    productImage,
+    generatedImage,
+    textLayers,
+    selectedLayerId,
+    prompt: promptText,
+    aspectRatio,
+    isGenerating,
+    credits,
+    setProductImage,
+    setGeneratedImage,
+    addTextLayer,
+    updateTextLayer,
+    removeTextLayer,
+    selectTextLayer,
+    setPrompt,
+    setAspectRatio,
+    setIsGenerating,
+  } = usePosterStore();
+
+  const [showTextTools, setShowTextTools] = useState(false);
+  const stageRef = useRef<any>(null);
+
+  // 图片上传处理
+  const onDrop = (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProductImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp'],
+    },
+    maxFiles: 1,
+  });
+
+  // 生成海报
+  const handleGenerate = async () => {
+    if (!productImage || !prompt) return;
+    
+    setIsGenerating(true);
+    try {
+      // 调用后端 API
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: productImage,
+          prompt: prompt,
+          aspect_ratio: aspectRatio,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setGeneratedImage(result.image_url);
+      } else {
+        alert('生成失败：' + result.error);
+      }
+    } catch (error) {
+      console.error('生成错误:', error);
+      alert('生成失败，请重试');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // 添加文字图层
+  const handleAddText = () => {
+    addTextLayer({
+      text: '双击编辑文字',
+      x: 100,
+      y: 100,
+      fontSize: 32,
+      fontFamily: 'Arial',
+      color: '#000000',
+    });
+    setShowTextTools(true);
+  };
+
+  // 导出图片
+  const handleExport = () => {
+    if (stageRef.current) {
+      const dataURL = stageRef.current.toDataURL({
+        pixelRatio: 2,
+        mimeType: 'image/png',
+      });
+      
+      // 创建下载链接
+      const link = document.createElement('a');
+      link.download = 'poster.png';
+      link.href = dataURL;
+      link.click();
+    }
+  };
+
+  // 宽高比配置
+  const aspectRatios = [
+    { value: '1:1', label: '1:1 (Amazon)', width: 600, height: 600 },
+    { value: '3:4', label: '3:4 (Shopify)', width: 450, height: 600 },
+    { value: '4:3', label: '4:3 (Facebook)', width: 600, height: 450 },
+    { value: '16:9', label: '16:9 (广告)', width: 640, height: 360 },
+  ];
+
+  const currentRatio = aspectRatios.find(r => r.value === aspectRatio) || aspectRatios[0];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部导航栏 */}
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-2xl">🎨</Link>
+              <h1 className="text-xl font-bold">AI Poster Editor</h1>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              {/*  credits 显示 */}
+              <div className="bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-medium">
+                剩余：{credits} 次
+              </div>
+
+              {/* 导出按钮 */}
+              <button
+                onClick={handleExport}
+                disabled={!generatedImage}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                💾 导出
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* 左侧工具栏 */}
+        <aside className="w-80 bg-white border-r overflow-y-auto">
+          <div className="p-4 space-y-6">
+            {/* 1. 上传产品图 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                上传产品图
+              </h3>
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                  isDragActive
+                    ? 'border-purple-500 bg-purple-50'
+                    : 'border-gray-300 hover:border-purple-400'
+                }`}
+              >
+                <input {...getInputProps()} />
+                {productImage ? (
+                  <div className="relative">
+                    <img src={productImage} alt="Product" className="max-h-40 mx-auto rounded-lg" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProductImage(null);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-4xl mb-2">📸</div>
+                    <p className="text-sm text-gray-600">
+                      {isDragActive ? '释放以上传' : '拖拽或点击上传'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, WEBP (≤20MB)</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* 2. 选择宽高比 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                选择尺寸
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {aspectRatios.map((ratio) => (
+                  <button
+                    key={ratio.value}
+                    onClick={() => setAspectRatio(ratio.value)}
+                    className={`p-3 rounded-lg border-2 text-sm transition-all ${
+                      aspectRatio === ratio.value
+                        ? 'border-purple-600 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="font-medium">{ratio.label}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. 输入背景描述 */}
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">3</span>
+                背景描述
+              </h3>
+              <textarea
+                value={promptText}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g., modern living room with soft natural lighting, plants in background"
+                className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              />
+              <div className="mt-2 space-y-1">
+                <p className="text-xs text-gray-500">💡 提示：</p>
+                <button
+                  onClick={() => setPrompt('modern minimalist background with soft lighting, professional product photography')}
+                  className="text-xs text-purple-600 hover:underline block"
+                >
+                  • 现代简约背景，柔和光线
+                </button>
+                <button
+                  onClick={() => setPrompt('luxury marble surface with elegant lighting, high-end product showcase')}
+                  className="text-xs text-purple-600 hover:underline block"
+                >
+                  • 奢华大理石台面，高端展示
+                </button>
+                <button
+                  onClick={() => setPrompt('natural wooden table with warm sunlight, lifestyle product photo')}
+                  className="text-xs text-purple-600 hover:underline block"
+                >
+                  • 自然木桌，温暖阳光，生活化场景
+                </button>
+              </div>
+            </div>
+
+            {/* 4. 生成按钮 */}
+            <div>
+              <button
+                onClick={handleGenerate}
+                disabled={!productImage || !prompt || isGenerating}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {isGenerating ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    生成中...
+                  </span>
+                ) : (
+                  '✨ 生成海报'
+                )}
+              </button>
+            </div>
+
+            {/* 5. 文字工具 */}
+            {generatedImage && (
+              <div>
+                <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center">
+                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">4</span>
+                  文字编辑
+                </h3>
+                <button
+                  onClick={handleAddText}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  + 添加文字
+                </button>
+
+                {textLayers.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium text-gray-600">文字图层：</p>
+                    {textLayers.map((layer) => (
+                      <div
+                        key={layer.id}
+                        onClick={() => {
+                          selectTextLayer(layer.id);
+                          setShowTextTools(true);
+                        }}
+                        className={`p-2 rounded border cursor-pointer text-sm ${
+                          selectedLayerId === layer.id
+                            ? 'border-purple-500 bg-purple-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {layer.text.substring(0, 20)}{layer.text.length > 20 ? '...' : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* 中间画布区域 */}
+        <main className="flex-1 flex items-center justify-center p-8 bg-gray-100 overflow-auto">
+          {!productImage ? (
+            <div className="text-center text-gray-400">
+              <div className="text-6xl mb-4">📦</div>
+              <p className="text-lg">请上传产品图片开始设计</p>
+            </div>
+          ) : !generatedImage ? (
+            <div className="text-center text-gray-400">
+              <div className="text-6xl mb-4">🎨</div>
+              <p className="text-lg">输入背景描述后点击生成</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+              <Stage
+                ref={stageRef}
+                width={currentRatio.width}
+                height={currentRatio.height}
+                className="cursor-crosshair"
+              >
+                <Layer>
+                  {/* 生成的背景图 */}
+                  <KonvaImage
+                    image={(() => {
+                      const img = new window.Image();
+                      img.src = generatedImage;
+                      img.crossOrigin = 'Anonymous';
+                      return img;
+                    })()}
+                    width={currentRatio.width}
+                    height={currentRatio.height}
+                  />
+
+                  {/* 文字图层 */}
+                  {textLayers.map((layer) => (
+                    <Text
+                      key={layer.id}
+                      text={layer.text}
+                      x={layer.x}
+                      y={layer.y}
+                      fontSize={layer.fontSize}
+                      fontFamily={layer.fontFamily}
+                      fill={layer.color}
+                      draggable
+                      onClick={() => {
+                        selectTextLayer(layer.id);
+                        setShowTextTools(true);
+                      }}
+                      onDragEnd={(e) => {
+                        updateTextLayer(layer.id, {
+                          x: e.target.x(),
+                          y: e.target.y(),
+                        });
+                      }}
+                      onDblClick={() => {
+                        const newText = prompt('修改文字内容:', layer.text);
+                        if (newText !== null) {
+                          updateTextLayer(layer.id, { text: newText });
+                        }
+                      }}
+                    />
+                  ))}
+                </Layer>
+              </Stage>
+            </div>
+          )}
+        </main>
+
+        {/* 右侧属性面板 */}
+        {showTextTools && selectedLayerId && (
+          <aside className="w-72 bg-white border-l overflow-y-auto">
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold">文字属性</h3>
+                <button
+                  onClick={() => setShowTextTools(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {(() => {
+                const layer = textLayers.find(l => l.id === selectedLayerId);
+                if (!layer) return null;
+
+                return (
+                  <div className="space-y-4">
+                    {/* 文字内容 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        文字内容
+                      </label>
+                      <input
+                        type="text"
+                        value={layer.text}
+                        onChange={(e) => updateTextLayer(layer.id, { text: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+
+                    {/* 字体选择 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        字体
+                      </label>
+                      <select
+                        value={layer.fontFamily}
+                        onChange={(e) => updateTextLayer(layer.id, { fontFamily: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-purple-500"
+                      >
+                        <option value="Arial">Arial</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Impact">Impact</option>
+                        <option value="Comic Sans MS">Comic Sans MS</option>
+                      </select>
+                    </div>
+
+                    {/* 字号 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        字号：{layer.fontSize}px
+                      </label>
+                      <input
+                        type="range"
+                        min="12"
+                        max="120"
+                        value={layer.fontSize}
+                        onChange={(e) => updateTextLayer(layer.id, { fontSize: parseInt(e.target.value) })}
+                        className="w-full"
+                      />
+                    </div>
+
+                    {/* 颜色选择 */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        颜色
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="color"
+                          value={layer.color}
+                          onChange={(e) => updateTextLayer(layer.id, { color: e.target.value })}
+                          className="w-10 h-10 border rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={layer.color}
+                          onChange={(e) => updateTextLayer(layer.id, { color: e.target.value })}
+                          className="flex-1 border border-gray-300 rounded-lg p-2 uppercase"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 删除按钮 */}
+                    <button
+                      onClick={() => {
+                        removeTextLayer(layer.id);
+                        selectTextLayer(null);
+                        setShowTextTools(false);
+                      }}
+                      className="w-full bg-red-100 text-red-700 py-2 rounded-lg hover:bg-red-200 transition-colors"
+                    >
+                      🗑️ 删除文字
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          </aside>
+        )}
+      </div>
+    </div>
+  );
+}
