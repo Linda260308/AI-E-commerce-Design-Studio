@@ -172,13 +172,16 @@ export default function Editor() {
                 >
                   Upgrade
                 </Link>
-                <button
-                  onClick={handleDownload}
-                  disabled={!productImage}
-                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 text-sm font-medium"
-                >
-                  📥 Download Poster
-                </button>
+                <div className="flex items-center space-x-2">
+                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                  <button
+                    onClick={handleDownload}
+                    disabled={!productImage}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 text-sm font-medium"
+                  >
+                    📥 Download Poster
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -189,6 +192,7 @@ export default function Editor() {
           <div className="flex gap-6">
             {/* 左侧步骤面板 */}
             <aside className="w-80 bg-white rounded-xl shadow-sm border p-4 h-fit">
+              {/* Step 1 */}
               <h3 className="font-bold text-gray-700 mb-4 flex items-center">
                 <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">1</span>
                 Upload Product
@@ -218,74 +222,73 @@ export default function Editor() {
                 </button>
               )}
 
-              {/* Step 2 */}
+              {/* Step 2: Canvas Size & Background */}
               <div className="mt-6">
                 <h3 className="font-bold text-gray-700 mb-3 flex items-center">
                   <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">2</span>
-                  Canvas Size
-                </h3>
-                <div className="space-y-2">
-                  {aspectRatios.map((item) => (
-                    <button
-                      key={item.ratio}
-                      onClick={() => setAspectRatio(item.ratio)}
-                      className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                        aspectRatio === item.ratio
-                          ? 'bg-purple-50 border-purple-500'
-                          : 'bg-white border-gray-300 hover:border-purple-400'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className="font-semibold text-sm">{item.ratio}</span>
-                        <span className="text-xs text-gray-500">{item.width}×{item.height}</span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">{item.platforms}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="mt-6">
-                <h3 className="font-bold text-gray-700 mb-3 flex items-center">
-                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">3</span>
-                  Background
+                  Canvas & Background
                 </h3>
                 
-                <div className="mb-3">
-                  <label className="block text-xs text-gray-600 mb-1">
-                    Background Keywords
+                {/* Canvas Size */}
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-gray-600 mb-2">
+                    Canvas Size
+                  </label>
+                  <div className="space-y-2">
+                    {aspectRatios.map((item) => (
+                      <button
+                        key={item.ratio}
+                        onClick={() => setAspectRatio(item.ratio)}
+                        className={`w-full p-2 rounded-lg border text-left transition-colors ${
+                          aspectRatio === item.ratio
+                            ? 'bg-purple-50 border-purple-500'
+                            : 'bg-white border-gray-300 hover:border-purple-400'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-sm">{item.ratio}</span>
+                          <span className="text-xs text-gray-500">{item.width}×{item.height}</span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">{item.platforms}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Background */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-2">
+                    Background
                   </label>
                   <textarea
                     value={promptText}
                     onChange={handlePromptChange}
                     placeholder="e.g., white minimalist podium, luxury marble..."
-                    className="w-full border border-gray-300 rounded-lg p-2 h-20 text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                    className="w-full border border-gray-300 rounded-lg p-2 h-16 text-xs focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none mb-2"
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {backgroundTypes.map((bg) => (
-                    <button
-                      key={bg.name}
-                      onClick={() => setBackgroundType(bg.name)}
-                      className={`p-2 rounded-lg border text-left transition-colors ${
-                        backgroundType === bg.name
-                          ? 'bg-purple-50 border-purple-500'
-                          : 'bg-white border-gray-300 hover:border-purple-400'
-                      }`}
-                    >
-                      <span className="text-lg block">{bg.preview}</span>
-                      <span className="text-xs font-medium block truncate">{bg.name}</span>
-                    </button>
-                  ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    {backgroundTypes.map((bg) => (
+                      <button
+                        key={bg.name}
+                        onClick={() => setBackgroundType(bg.name)}
+                        className={`p-2 rounded-lg border text-left transition-colors ${
+                          backgroundType === bg.name
+                            ? 'bg-purple-50 border-purple-500'
+                            : 'bg-white border-gray-300 hover:border-purple-400'
+                        }`}
+                      >
+                        <span className="text-lg block">{bg.preview}</span>
+                        <span className="text-xs font-medium block truncate">{bg.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Step 4 */}
+              {/* Step 3: Add Text */}
               <div className="mt-6">
                 <h3 className="font-bold text-gray-700 mb-3 flex items-center">
-                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">4</span>
+                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs mr-2">3</span>
                   Add Text
                 </h3>
                 
