@@ -26,24 +26,27 @@ export default function Editor() {
   } = usePosterStore();
 
   const [showTextTools, setShowTextTools] = useState(false);
-  const [activeStep, setActiveStep] = useState(1);
   const [backgroundType, setBackgroundType] = useState('White Podium');
+  const [productScale, setProductScale] = useState(100);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Remove.bg API Key
+  const REMOVE_BG_API_KEY = 'bh1QY29JdqoMv4JeWzeZa8Zm';
 
   // 画布尺寸配置
   const aspectRatios = [
-    { ratio: '1:1', platforms: 'Amazon, Instagram Square', width: 1080, height: 1080 },
-    { ratio: '4:3', platforms: 'Facebook, LinkedIn', width: 1200, height: 900 },
-    { ratio: '9:16', platforms: 'TikTok, Instagram Stories, Reels', width: 1080, height: 1920 },
-    { ratio: '16:9', platforms: 'YouTube, Facebook Cover', width: 1920, height: 1080 },
+    { ratio: '1:1', platforms: 'Amazon, Instagram Square', width: 1080, height: 1080, color: 'from-purple-400 to-blue-400' },
+    { ratio: '4:3', platforms: 'Facebook, LinkedIn', width: 1200, height: 900, color: 'from-blue-400 to-green-400' },
+    { ratio: '9:16', platforms: 'TikTok, Instagram Stories, Reels', width: 1080, height: 1920, color: 'from-pink-400 to-purple-400' },
+    { ratio: '16:9', platforms: 'YouTube, Facebook Cover', width: 1920, height: 1080, color: 'from-orange-400 to-pink-400' },
   ];
 
   // 背景类型配置
   const backgroundTypes = [
-    { name: 'White Podium', desc: 'Minimalist white background', preview: '🤍' },
-    { name: 'Luxury Marble', desc: 'Marble / Dark luxury background', preview: '🖤' },
-    { name: 'Natural Wood', desc: 'Wood / Natural background', preview: '🪵' },
-    { name: 'Gradient', desc: 'Gradient / Abstract background', preview: '🌈' },
+    { name: 'White Podium', desc: 'Minimalist white', preview: '🤍', color: 'from-gray-50 to-gray-200' },
+    { name: 'Luxury Marble', desc: 'Marble / Dark luxury', preview: '🖤', color: 'from-gray-800 to-gray-900' },
+    { name: 'Natural Wood', desc: 'Wood / Natural', preview: '🪵', color: 'from-amber-200 to-amber-400' },
+    { name: 'Gradient', desc: 'Gradient / Abstract', preview: '🌈', color: 'from-purple-300 via-pink-300 to-blue-300' },
   ];
 
   // 图片上传处理
@@ -66,15 +69,47 @@ export default function Editor() {
     maxFiles: 1,
   });
 
-  // Remove BG 抠图（模拟）
+  // Remove BG 抠图
   const handleRemoveBG = async () => {
     if (!productImage) return;
     setIsGenerating(true);
-    // TODO: 调用 Remove.bg API
-    setTimeout(() => {
+    
+    try {
+      // 将 base64 转为 blob
+      const response = await fetch(productImage);
+      const blob = await response.blob();
+      
+      // 调用 Remove.bg API
+      const formData = new FormData();
+      formData.append('image_file', blob, 'product.png');
+      formData.append('size', 'auto');
+      
+      const apiResponse = await fetch('https://api.remove.bg/v1.0/removebg', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': REMOVE_BG_API_KEY,
+        },
+        body: formData,
+      });
+      
+      if (apiResponse.ok) {
+        const resultBlob = await apiResponse.blob();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setProductImage(e.target?.result as string);
+        };
+        reader.readAsDataURL(resultBlob);
+        alert('Background removed successfully!');
+      } else {
+        const error = await apiResponse.json();
+        alert(`Remove BG failed: ${error.errors?.[0]?.title || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Remove BG error:', error);
+      alert('Remove BG failed. Please check your API key and try again.');
+    } finally {
       setIsGenerating(false);
-      alert('Remove BG feature requires API configuration');
-    }, 1500);
+    }
   };
 
   // 根据关键词匹配背景
@@ -144,6 +179,9 @@ export default function Editor() {
     'Courier New',
   ];
 
+  // 获取当前选中的画布尺寸
+  const selectedAspectRatio = aspectRatios.find(a => a.ratio === aspectRatio);
+
   return (
     <>
       <Head>
@@ -172,16 +210,6 @@ export default function Editor() {
                 >
                   Upgrade
                 </Link>
-                <div className="flex items-center space-x-2">
-                  <span className="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
-                  <button
-                    onClick={handleDownload}
-                    disabled={!productImage}
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 text-sm font-medium"
-                  >
-                    📥 Download Poster
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -216,9 +244,22 @@ export default function Editor() {
                 <button
                   onClick={handleRemoveBG}
                   disabled={isGenerating}
-                  className="w-full mt-3 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium disabled:opacity-50"
+                  className="w-full mt-3 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium disabled:opacity-50 flex items-center justify-center"
                 >
-                  ✂️ Remove BG
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-700" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <span>✂️</span>
+                      <span className="ml-1">Remove BG</span>
+                    </>
+                  )}
                 </button>
               )}
 
@@ -229,6 +270,28 @@ export default function Editor() {
                   Canvas & Background
                 </h3>
                 
+                {/* Product Scale */}
+                {productImage && (
+                  <div className="mb-4">
+                    <label className="block text-xs font-medium text-gray-600 mb-2">
+                      Product Size: {productScale}%
+                    </label>
+                    <input
+                      type="range"
+                      min="20"
+                      max="150"
+                      value={productScale}
+                      onChange={(e) => setProductScale(parseInt(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>20%</span>
+                      <span>100%</span>
+                      <span>150%</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Canvas Size */}
                 <div className="mb-4">
                   <label className="block text-xs font-medium text-gray-600 mb-2">
@@ -239,17 +302,18 @@ export default function Editor() {
                       <button
                         key={item.ratio}
                         onClick={() => setAspectRatio(item.ratio)}
-                        className={`w-full p-2 rounded-lg border text-left transition-colors ${
+                        className={`w-full p-3 rounded-lg border text-left transition-all relative overflow-hidden ${
                           aspectRatio === item.ratio
-                            ? 'bg-purple-50 border-purple-500'
-                            : 'bg-white border-gray-300 hover:border-purple-400'
+                            ? 'ring-2 ring-purple-500 border-purple-500'
+                            : 'border-gray-300 hover:border-purple-400'
                         }`}
                       >
-                        <div className="flex justify-between items-center">
+                        <div className={`absolute inset-0 bg-gradient-to-r ${item.color} opacity-20`}></div>
+                        <div className="relative flex justify-between items-center">
                           <span className="font-semibold text-sm">{item.ratio}</span>
-                          <span className="text-xs text-gray-500">{item.width}×{item.height}</span>
+                          <span className="text-xs text-gray-600">{item.width}×{item.height}</span>
                         </div>
-                        <div className="text-xs text-gray-500 mt-1">{item.platforms}</div>
+                        <div className="relative text-xs text-gray-600 mt-1">{item.platforms}</div>
                       </button>
                     ))}
                   </div>
@@ -271,14 +335,18 @@ export default function Editor() {
                       <button
                         key={bg.name}
                         onClick={() => setBackgroundType(bg.name)}
-                        className={`p-2 rounded-lg border text-left transition-colors ${
+                        className={`p-2 rounded-lg border text-left transition-all relative overflow-hidden ${
                           backgroundType === bg.name
-                            ? 'bg-purple-50 border-purple-500'
-                            : 'bg-white border-gray-300 hover:border-purple-400'
+                            ? 'ring-2 ring-purple-500 border-purple-500'
+                            : 'border-gray-300 hover:border-purple-400'
                         }`}
                       >
-                        <span className="text-lg block">{bg.preview}</span>
-                        <span className="text-xs font-medium block truncate">{bg.name}</span>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${bg.color} opacity-30`}></div>
+                        <div className="relative">
+                          <span className="text-lg block">{bg.preview}</span>
+                          <span className="text-xs font-medium block truncate">{bg.name}</span>
+                          <span className="text-[10px] text-gray-500 truncate">{bg.desc}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -332,63 +400,93 @@ export default function Editor() {
             </aside>
 
             {/* 中间画布区域 */}
-            <div 
-              ref={canvasRef}
-              className="flex-1 bg-white rounded-xl shadow-sm border p-6 min-h-[600px] flex items-center justify-center relative overflow-hidden"
-              style={{
-                aspectRatio: aspectRatio.replace(':', '/'),
-                maxHeight: '700px',
-              }}
-            >
-              {!productImage ? (
-                <div className="text-center text-gray-400">
-                  <span className="text-6xl block mb-4">📷</span>
-                  <p className="text-lg">Upload a product image to start</p>
-                  <p className="text-sm mt-2">Step 1: Upload your product photo</p>
-                </div>
-              ) : (
-                <div className="relative w-full h-full">
-                  <img
-                    src={productImage}
-                    alt="Product"
-                    className="w-full h-full object-contain"
-                  />
-                  
-                  {/* 文字图层 */}
-                  {textLayers.map((layer) => (
-                    <div
-                      key={layer.id}
-                      onClick={() => {
-                        selectTextLayer(layer.id);
-                        setShowTextTools(true);
-                      }}
-                      className={`absolute cursor-move p-1 hover:bg-purple-100 rounded ${
-                        selectedLayerId === layer.id ? 'ring-2 ring-purple-500' : ''
-                      }`}
+            <div className="flex-1 flex flex-col">
+              <div 
+                ref={canvasRef}
+                className="flex-1 bg-white rounded-xl shadow-sm border p-6 min-h-[600px] flex items-center justify-center relative overflow-hidden"
+                style={{
+                  aspectRatio: aspectRatio?.replace(':', '/') || '1',
+                  maxHeight: '700px',
+                }}
+              >
+                {!productImage ? (
+                  <div className="text-center text-gray-400">
+                    <span className="text-6xl block mb-4">📷</span>
+                    <p className="text-lg">Upload a product image to start</p>
+                    <p className="text-sm mt-2">Step 1: Upload your product photo</p>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-full">
+                    <img
+                      src={productImage}
+                      alt="Product"
+                      className="absolute inset-0 w-full h-full object-contain"
                       style={{
-                        left: layer.x,
-                        top: layer.y,
-                        fontSize: layer.fontSize,
-                        fontFamily: layer.fontFamily,
-                        fontWeight: layer.fontWeight,
-                        fontStyle: layer.fontStyle,
-                        color: layer.color,
+                        transform: `scale(${productScale / 100})`,
+                        transformOrigin: 'center center',
                       }}
-                    >
-                      {layer.text}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeTextLayer(layer.id);
+                    />
+                    
+                    {/* 文字图层 */}
+                    {textLayers.map((layer) => (
+                      <div
+                        key={layer.id}
+                        onClick={() => {
+                          selectTextLayer(layer.id);
+                          setShowTextTools(true);
                         }}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs hover:bg-red-600"
+                        className={`absolute cursor-move p-1 hover:bg-purple-100 rounded ${
+                          selectedLayerId === layer.id ? 'ring-2 ring-purple-500' : ''
+                        }`}
+                        style={{
+                          left: layer.x,
+                          top: layer.y,
+                          fontSize: layer.fontSize,
+                          fontFamily: layer.fontFamily,
+                          fontWeight: layer.fontWeight,
+                          fontStyle: layer.fontStyle,
+                          color: layer.color,
+                        }}
                       >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                        {layer.text}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeTextLayer(layer.id);
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Step 4: Download Button - 图片正下方 */}
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={handleDownload}
+                  disabled={!productImage || isGenerating}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 text-lg font-semibold flex items-center space-x-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📥</span>
+                      <span>Download Poster</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* 右侧文字属性面板 */}
@@ -510,30 +608,6 @@ export default function Editor() {
                       >
                         U
                       </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Position</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <span className="text-xs text-gray-500">X</span>
-                        <input
-                          type="number"
-                          value={textLayers.find(l => l.id === selectedLayerId)?.x || 0}
-                          onChange={(e) => updateTextLayer(selectedLayerId, { x: parseInt(e.target.value) })}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-500">Y</span>
-                        <input
-                          type="number"
-                          value={textLayers.find(l => l.id === selectedLayerId)?.y || 0}
-                          onChange={(e) => updateTextLayer(selectedLayerId, { y: parseInt(e.target.value) })}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                        />
-                      </div>
                     </div>
                   </div>
 
