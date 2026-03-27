@@ -28,7 +28,11 @@ export default function Editor() {
   const [showTextTools, setShowTextTools] = useState(false);
   const [backgroundType, setBackgroundType] = useState('White Podium');
   const [productScale, setProductScale] = useState(100);
+  const [productPosition, setProductPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
+  const productImgRef = useRef<HTMLImageElement>(null);
 
   // Remove.bg API Key
   const REMOVE_BG_API_KEY = 'bh1QY29JdqoMv4JeWzeZa8Zm';
@@ -56,6 +60,8 @@ export default function Editor() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setProductImage(e.target?.result as string);
+        setProductPosition({ x: 0, y: 0 }); // 重置位置
+        setProductScale(100); // 重置缩放
       };
       reader.readAsDataURL(file);
     }
@@ -75,11 +81,9 @@ export default function Editor() {
     setIsGenerating(true);
     
     try {
-      // 将 base64 转为 blob
       const response = await fetch(productImage);
       const blob = await response.blob();
       
-      // 调用 Remove.bg API
       const formData = new FormData();
       formData.append('image_file', blob, 'product.png');
       formData.append('size', 'auto');
@@ -150,21 +154,114 @@ export default function Editor() {
     setShowTextTools(true);
   };
 
-  // 下载海报
+  // 产品图片拖拽处理
+  const handleProductMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - productPosition.x,
+      y: e.clientY - productPosition.y,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging) {
+      setProductPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 下载海报 - 使用 canvas 合成图片
   const handleDownload = async () => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !productImage) return;
     setIsGenerating(true);
     
-    // TODO: 使用 html2canvas 或类似库生成图片
-    setTimeout(() => {
-      setIsGenerating(false);
-      // 模拟下载
+    try {
+      // 创建 canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // 设置 canvas 尺寸
+      const selectedRatio = aspectRatios.find(a => a.ratio === aspectRatio);
+      canvas.width = selectedRatio?.width || 1080;
+      canvas.height = selectedRatio?.height || 1080;
+      
+      if (!ctx) return;
+      
+      // 1. 绘制背景
+      const bgType = backgroundTypes.find(b => b.name === backgroundType);
+      if (bgType) {
+        // 根据背景类型绘制不同颜色
+        const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        switch (backgroundType) {
+          case 'White Podium':
+            gradient.addColorStop(0, '#f9fafb');
+            gradient.addColorStop(1, '#e5e7eb');
+            break;
+          case 'Luxury Marble':
+            gradient.addColorStop(0, '#1f2937');
+            gradient.addColorStop(1, '#111827');
+            break;
+          case 'Natural Wood':
+            gradient.addColorStop(0, '#fde68a');
+            gradient.addColorStop(1, '#f59e0b');
+            break;
+          case 'Gradient':
+            gradient.addColorStop(0, '#d8b4fe');
+            gradient.addColorStop(0.5, '#f9a8d4');
+            gradient.addColorStop(1, '#93c5fd');
+            break;
+        }
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // 2. 绘制产品图片
+      const productImg = new Image();
+      productImg.crossOrigin = 'anonymous';
+      productImg.src = productImage;
+      
+      await new Promise((resolve) => {
+        productImg.onload = resolve;
+      });
+      
+      // 计算绘制尺寸（应用缩放）
+      const scale = productScale / 100;
+      const imgWidth = productImg.width * scale;
+      const imgHeight = productImg.height * scale;
+      
+      // 居中绘制
+      const centerX = (canvas.width - imgWidth) / 2 + productPosition.x;
+      const centerY = (canvas.height - imgHeight) / 2 + productPosition.y;
+      
+      ctx.drawImage(productImg, centerX, centerY, imgWidth, imgHeight);
+      
+      // 3. 绘制文字图层
+      textLayers.forEach((layer) => {
+        ctx.font = `${layer.fontStyle === 'italic' ? 'italic' : ''} ${layer.fontWeight === 'bold' ? 'bold' : ''} ${layer.fontSize}px ${layer.fontFamily}`;
+        ctx.fillStyle = layer.color;
+        ctx.fillText(layer.text, layer.x, layer.y);
+      });
+      
+      // 4. 导出并下载
+      const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = 'ai-poster-studio.png';
-      link.href = productImage || '';
+      link.download = `ai-poster-${Date.now()}.png`;
+      link.href = dataUrl;
       link.click();
+      
       alert('Poster downloaded successfully!');
-    }, 1500);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download poster. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // 字体选项
@@ -181,6 +278,13 @@ export default function Editor() {
 
   // 获取当前选中的画布尺寸
   const selectedAspectRatio = aspectRatios.find(a => a.ratio === aspectRatio);
+
+  // 获取当前背景颜色
+  const getCurrentBackground = () => {
+    const bg = backgroundTypes.find(b => b.name === backgroundType);
+    if (!bg) return 'from-gray-50 to-gray-200';
+    return bg.color;
+  };
 
   return (
     <>
@@ -403,28 +507,37 @@ export default function Editor() {
             <div className="flex-1 flex flex-col">
               <div 
                 ref={canvasRef}
-                className="flex-1 bg-white rounded-xl shadow-sm border p-6 min-h-[600px] flex items-center justify-center relative overflow-hidden"
+                className={`bg-gradient-to-br ${getCurrentBackground()} rounded-xl shadow-sm border p-6 min-h-[600px] flex items-center justify-center relative overflow-hidden`}
                 style={{
                   aspectRatio: aspectRatio?.replace(':', '/') || '1',
                   maxHeight: '700px',
                 }}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
               >
                 {!productImage ? (
-                  <div className="text-center text-gray-400">
+                  <div className="text-center text-gray-600">
                     <span className="text-6xl block mb-4">📷</span>
                     <p className="text-lg">Upload a product image to start</p>
                     <p className="text-sm mt-2">Step 1: Upload your product photo</p>
                   </div>
                 ) : (
                   <div className="relative w-full h-full">
+                    {/* 产品图片 - 可拖拽 */}
                     <img
+                      ref={productImgRef}
                       src={productImage}
                       alt="Product"
-                      className="absolute inset-0 w-full h-full object-contain"
+                      className="absolute cursor-move select-none"
                       style={{
-                        transform: `scale(${productScale / 100})`,
-                        transformOrigin: 'center center',
+                        left: '50%',
+                        top: '50%',
+                        transform: `translate(calc(-50% + ${productPosition.x}px), calc(-50% + ${productPosition.y}px)) scale(${productScale / 100})`,
+                        maxWidth: '100%',
+                        maxHeight: '100%',
                       }}
+                      onMouseDown={handleProductMouseDown}
                     />
                     
                     {/* 文字图层 */}
