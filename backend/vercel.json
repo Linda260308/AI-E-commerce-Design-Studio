@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "app/main.py"
     }
-  ],
-  "build": {
-    "env": {
-      "PIP_REQUIREMENTS_FILE": "requirements-vercel.txt"
-    }
-  }
+  ]
 }
