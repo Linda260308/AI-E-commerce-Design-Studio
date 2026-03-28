@@ -77,7 +77,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Head>
-        <title>Login - AI Poster Studio</title>
+        <title>Login - AI Poster Studio v2.0</title>
       </Head>
 
       <div className="max-w-md w-full space-y-8 bg-white rounded-2xl shadow-xl p-8">
