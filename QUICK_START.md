@@ -2,18 +2,23 @@
 
 ## 第一步：创建数据库（2 分钟）
 
-### 使用 Vercel Postgres（推荐）
+### 使用 Neon（推荐 ⭐）
 
-1. 访问 https://vercel.com/dashboard
-2. 点击你的项目 **AI Poster Studio**
-3. 点击 **Storage** 标签
-4. 点击 **Add Database** → **Postgres**
-5. 填写：
-   - Database Name: `ai-poster-studio-db`
-   - Region: `icn1` (东京) 或 `sin1` (新加坡)
-6. 点击 **Create**
+1. 访问 https://neon.tech
+2. 点击 **Sign in with GitHub**（使用 GitHub 账号登录）
+3. 登录后点击 **New Project**
+4. 填写：
+   - **Project name**: `ai-poster-studio`
+   - **Database name**: `ai_poster_studio`
+   - **Region**: `aws-ap-southeast-1` (新加坡，离中国近)
+5. 点击 **Create Project**
 
-✅ 创建完成后，Vercel 会自动添加 `POSTGRES_URL` 环境变量！
+✅ 创建完成后，复制 **Connection Details** 中的连接字符串！
+
+格式类似：
+```
+postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/ai_poster_studio?sslmode=require
+```
 
 ---
 
