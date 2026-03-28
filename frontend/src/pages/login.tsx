@@ -11,21 +11,26 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Handle OAuth callback
+  // Handle OAuth callback - 处理 Google 登录回调
   useEffect(() => {
     const token = router.query.token;
     const error = router.query.error;
     
     if (error === 'auth_failed') {
       alert('Google login failed. Please try again.');
+      // 清除 URL 参数
+      router.replace('/login');
     }
     
-    if (token) {
+    if (token && typeof token === 'string') {
+      // 保存 token
       saveAuthTokens({
-        access_token: token as string,
-        refresh_token: token as string,
+        access_token: token,
+        refresh_token: token,
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
+      
+      // 清除 URL 参数并跳转到编辑器
       router.replace('/editor');
     }
   }, [router.query, router]);
@@ -65,7 +70,7 @@ export default function Login() {
       }
       
       const data = await response.json();
-      // Redirect to Google OAuth
+      // 重定向到 Google OAuth
       window.location.href = data.authorization_url;
     } catch (error) {
       console.error('Google login error:', error);
@@ -77,7 +82,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <Head>
-        <title>Login - AI Poster Studio v2.0</title>
+        <title>Login - AI Poster Studio</title>
       </Head>
 
       <div className="max-w-md w-full space-y-8 bg-white rounded-2xl shadow-xl p-8">

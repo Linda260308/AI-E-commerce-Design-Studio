@@ -40,6 +40,11 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
                 }
             )
             token_data = token_resp.json()
+            
+            if "error" in token_data:
+                print(f"Token exchange error: {token_data}")
+                raise Exception(f"Token exchange failed: {token_data.get('error')}")
+            
             access_token = token_data.get("access_token")
         
         # 获取用户信息
@@ -59,11 +64,14 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         oauth = db.query(OAuthAccount).filter(OAuthAccount.provider_account_id == google_id).first()
         if oauth:
             user = db.query(User).filter(User.id == oauth.user_id).first()
+            # 更新 token
+            oauth.access_token = access_token
         else:
             user_id = f"user_{secrets.token_hex(16)}"
             user = User(id=user_id, email=email, name=name, avatar_url=avatar_url, google_id=google_id, credits=5, plan="free")
             db.add(user)
-            oauth = OAuthAccount(user_id=user_id, provider="google", provider_account_id=google_id, access_token=access_token)
+            db.flush()  # 获取 user.id
+            oauth = OAuthAccount(user_id=user.id, provider="google", provider_account_id=google_id, access_token=access_token)
             db.add(oauth)
         
         # 创建会话
@@ -73,8 +81,10 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         db.add(app_session)
         db.commit()
         
-        return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/editor?token={session_token}")
+        # 重定向到前端登录页面，携带 token
+        return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?token={session_token}")
     except Exception as e:
+        print(f"Google callback error: {str(e)}")
         return RedirectResponse(url="https://ai-poster-studio.vercel.app/login?error=auth_failed")
 
 @router.get("/me")
