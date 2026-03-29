@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/auth", tags=["认证"])
 @router.get("/google/url", response_model=GoogleAuthUrlResponse)
 async def get_google_auth_url():
     client_id = __import__('os').getenv("GOOGLE_CLIENT_ID")
-    redirect_uri = __import__('os').getenv("GOOGLE_REDIRECT_URI", "https://ai-poster-studio-b711.vercel.app/api/auth/callback")
+    redirect_uri = __import__('os').getenv("GOOGLE_REDIRECT_URI", "https://ai-poster-studio.vercel.app/api/auth/callback")
     state = secrets.token_urlsafe(32)
     url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid%20email%20profile&state={state}&access_type=offline&prompt=consent"
     return GoogleAuthUrlResponse(authorization_url=url, state=state)
@@ -25,7 +25,7 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
     try:
         client_id = __import__('os').getenv("GOOGLE_CLIENT_ID")
         client_secret = __import__('os').getenv("GOOGLE_CLIENT_SECRET")
-        redirect_uri = __import__('os').getenv("GOOGLE_REDIRECT_URI", "https://ai-poster-studio-b711.vercel.app/api/auth/callback")
+        redirect_uri = __import__('os').getenv("GOOGLE_REDIRECT_URI", "https://ai-poster-studio.vercel.app/api/auth/callback")
         
         # 换取 token
         async with httpx.AsyncClient() as client:
