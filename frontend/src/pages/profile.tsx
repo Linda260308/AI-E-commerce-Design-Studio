@@ -88,7 +88,8 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Profile: Failed to load user data:', error);
-      setError('加载失败，请刷新页面重试');
+      const errorMsg = error instanceof Error ? error.message : '未知错误';
+      setError(`加载失败：${errorMsg}。请检查网络连接或刷新页面重试`);
     } finally {
       setLoading(false);
     }
@@ -131,14 +132,24 @@ export default function Profile() {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">未找到用户信息</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
-          >
-            返回登录
-          </button>
+        <div className="text-center bg-white rounded-lg shadow-md p-8 max-w-md">
+          <div className="text-4xl mb-4">❓</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">未找到用户信息</h2>
+          <p className="text-gray-600 mb-6">可能是登录信息已过期，请重新登录</p>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
+            >
+              返回登录
+            </button>
+            <button
+              onClick={() => router.push('/editor')}
+              className="w-full px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 rounded-lg hover:bg-purple-50"
+            >
+              🎨 进入编辑器
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -159,6 +170,12 @@ export default function Profile() {
               <h1 className="text-xl font-bold text-gray-900">AI Poster Studio</h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link
+                href="/editor"
+                className="text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
+              >
+                🎨 进入编辑器
+              </Link>
               <span className="text-sm text-gray-600">{user.name || user.email}</span>
               <button
                 onClick={handleLogout}
