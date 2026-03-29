@@ -25,42 +25,70 @@ export default function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     // 检查登录状态
-    if (!isLoggedIn()) {
-      router.push('/login');
-      return;
-    }
+    const checkAuth = async () => {
+      const token = getAccessToken();
+      console.log('Profile: Checking auth, token exists:', !!token);
+      
+      if (!token || !isLoggedIn()) {
+        console.log('Profile: No token, redirecting to login');
+        router.push('/login');
+        return;
+      }
+      
+      // 加载用户数据
+      await loadUserData();
+    };
     
-    // 加载用户数据
-    loadUserData();
+    checkAuth();
   }, []);
 
   const loadUserData = async () => {
     try {
       const token = getAccessToken();
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      
+      console.log('Profile: Loading data from', backendUrl);
+      
       const [userRes, statsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/profile`, {
+        fetch(`${backendUrl}/api/user/profile`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/stats`, {
+        fetch(`${backendUrl}/api/user/stats`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);
       
+      console.log('Profile: User API response status:', userRes.status);
+      console.log('Profile: Stats API response status:', statsRes.status);
+      
+      if (userRes.status === 401) {
+        console.log('Profile: Token expired, redirecting to login');
+        router.push('/login');
+        return;
+      }
+      
       if (userRes.ok) {
         const userData = await userRes.json();
+        console.log('Profile: User data loaded:', userData);
         setUser(userData);
+      } else {
+        const errorText = await userRes.text();
+        console.error('Profile: Failed to load user data:', errorText);
       }
       
       if (statsRes.ok) {
         const statsData = await statsRes.json();
+        console.log('Profile: Stats data loaded:', statsData);
         setStats(statsData);
       }
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      console.error('Profile: Failed to load user data:', error);
+      setError('加载失败，请刷新页面重试');
     } finally {
       setLoading(false);
     }
@@ -76,14 +104,44 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
+        <div className="text-center bg-white rounded-lg shadow-md p-8 max-w-md">
+          <div className="text-4xl mb-4">❌</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">加载失败</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
+          >
+            刷新页面
+          </button>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">未找到用户信息</p>
+          <button
+            onClick={() => router.push('/login')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
+          >
+            返回登录
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
