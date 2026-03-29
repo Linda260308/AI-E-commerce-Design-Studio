@@ -54,3 +54,33 @@ class OAuthAccount(Base):
     refresh_token = Column(Text, nullable=True)
     expires_at = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    id = Column(String, primary_key=True, index=True, default=lambda: f"sub_{secrets.token_hex(16)}")
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    plan_type = Column(String, default="free")  # free/pro/enterprise
+    status = Column(String, default="active")  # active/canceled/expired
+    stripe_subscription_id = Column(String, unique=True, nullable=True)
+    start_date = Column(DateTime(timezone=True), server_default=func.now())
+    end_date = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class CreditTransaction(Base):
+    __tablename__ = "credit_transactions"
+    id = Column(String, primary_key=True, index=True, default=lambda: f"txn_{secrets.token_hex(16)}")
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    amount = Column(Integer, nullable=False)  # 正数=增加，负数=消耗
+    type = Column(String, nullable=False)  # purchase/refund/consumption/bonus
+    description = Column(String, nullable=True)
+    poster_id = Column(String, ForeignKey("posters.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    language = Column(String, default="zh-CN")
+    theme = Column(String, default="light")
+    email_notifications = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
