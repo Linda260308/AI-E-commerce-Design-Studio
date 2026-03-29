@@ -22,10 +22,14 @@ async def get_google_auth_url():
 
 @router.get("/callback")
 async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
+    import traceback
+    error_detail = "unknown"
     try:
         client_id = __import__('os').getenv("GOOGLE_CLIENT_ID")
         client_secret = __import__('os').getenv("GOOGLE_CLIENT_SECRET")
         redirect_uri = __import__('os').getenv("GOOGLE_REDIRECT_URI", "https://ai-poster-studio-b711.vercel.app/api/auth/callback")
+        
+        print(f"[Google OAuth] Starting callback. Client ID: {client_id[:10]}... Redirect URI: {redirect_uri}")
         
         # 换取 token
         async with httpx.AsyncClient() as client:
@@ -40,12 +44,15 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
                 }
             )
             token_data = token_resp.json()
+            print(f"[Google OAuth] Token response status: {token_resp.status_code}")
             
             if "error" in token_data:
-                print(f"Token exchange error: {token_data}")
+                print(f"[Google OAuth] Token exchange error: {token_data}")
+                error_detail = f"token_error:{token_data.get('error')}"
                 raise Exception(f"Token exchange failed: {token_data.get('error')}")
             
             access_token = token_data.get("access_token")
+            print(f"[Google OAuth] Token exchange successful")
         
         # 获取用户信息
         async with httpx.AsyncClient() as client:
@@ -54,11 +61,13 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
                 headers={"Authorization": f"Bearer {access_token}"}
             )
             google_user = user_resp.json()
+            print(f"[Google OAuth] User info response status: {user_resp.status_code}")
         
         google_id = google_user.get("id")
         email = google_user.get("email")
         name = google_user.get("name")
         avatar_url = google_user.get("picture")
+        print(f"[Google OAuth] User: {email} ({google_id})")
         
         # 查找或创建用户
         oauth = db.query(OAuthAccount).filter(OAuthAccount.provider_account_id == google_id).first()
@@ -66,6 +75,7 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             user = db.query(User).filter(User.id == oauth.user_id).first()
             # 更新 token
             oauth.access_token = access_token
+            print(f"[Google OAuth] Existing user found: {user.id}")
         else:
             user_id = f"user_{secrets.token_hex(16)}"
             user = User(id=user_id, email=email, name=name, avatar_url=avatar_url, google_id=google_id, credits=5, plan="free")
@@ -73,6 +83,7 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             db.flush()  # 获取 user.id
             oauth = OAuthAccount(user_id=user.id, provider="google", provider_account_id=google_id, access_token=access_token)
             db.add(oauth)
+            print(f"[Google OAuth] New user created: {user_id}")
         
         # 创建会话
         session_token = secrets.token_urlsafe(32)
@@ -80,12 +91,19 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         app_session = UserSession(user_id=user.id, access_token=session_token, refresh_token=secrets.token_urlsafe(32), expires_at=expires_at)
         db.add(app_session)
         db.commit()
+        print(f"[Google OAuth] Session created successfully")
         
         # 重定向到前端登录页面，携带 token
         return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?token={session_token}")
     except Exception as e:
-        print(f"Google callback error: {str(e)}")
-        return RedirectResponse(url="https://ai-poster-studio.vercel.app/login?error=auth_failed")
+        error_msg = f"{str(e)}"
+        error_stack = traceback.format_exc()
+        print(f"[Google OAuth] ERROR: {error_msg}")
+        print(f"[Google OAuth] Stack trace: {error_stack}")
+        # 将错误信息编码到 URL 中
+        import urllib.parse
+        error_encoded = urllib.parse.quote(f"{error_detail}:{error_msg}", safe='')
+        return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?error=auth_failed&error_detail={error_encoded}")
 
 @router.get("/me")
 async def get_current_user(authorization: str = Depends(lambda x: x), db: Session = Depends(get_db)):
