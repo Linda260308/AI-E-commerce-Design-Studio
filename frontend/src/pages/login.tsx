@@ -30,8 +30,8 @@ export default function Login() {
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
       
-      // 清除 URL 参数并跳转到编辑器
-      router.replace('/editor');
+      // 清除 URL 参数并跳转到个人中心
+      router.replace('/profile');
     }
   }, [router.query, router]);
 
