@@ -28,6 +28,16 @@ def get_db_engine():
     from app.database import engine, Base
     return engine, Base
 
+# 初始化数据库表
+def init_db_tables():
+    try:
+        from app.database import engine, Base
+        from app import models  # 导入模型以注册表
+        Base.metadata.create_all(bind=engine)
+        print("[Database] Tables created successfully")
+    except Exception as e:
+        print(f"[Database] Error creating tables: {e}")
+
 # 延迟导入路由
 def get_auth_router():
     from app.routers import auth
@@ -41,6 +51,8 @@ def get_users_router():
 try:
     app.include_router(get_auth_router())
     app.include_router(get_users_router())
+    # 初始化数据库表
+    init_db_tables()
 except Exception as e:
     print(f"Warning: Could not load routers: {e}")
 
