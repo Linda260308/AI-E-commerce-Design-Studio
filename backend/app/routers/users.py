@@ -36,6 +36,7 @@ def get_current_user(authorization: str = Depends(lambda x: x), db: Session = De
 @router.get("/profile", response_model=UserResponse)
 async def get_profile(current_user: User = Depends(get_current_user)):
     """获取用户资料"""
+    print(f"[Profile API] User {current_user.id} loaded successfully")
     return current_user
 
 @router.put("/profile", response_model=UserResponse)

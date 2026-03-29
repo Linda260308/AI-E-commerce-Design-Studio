@@ -78,7 +78,11 @@ export default function Profile() {
         setUser(userData);
       } else {
         const errorText = await userRes.text();
-        console.error('Profile: Failed to load user data:', errorText);
+        console.error('Profile: Failed to load user data:', userRes.status, errorText);
+        // 如果 token 存在但 API 返回错误，显示调试信息
+        if (userRes.status === 401 || userRes.status === 404) {
+          setError(`无法加载用户信息 (状态码：${userRes.status})。请尝试重新登录，或点击"进入编辑器"继续使用。`);
+        }
       }
       
       if (statsRes.ok) {
