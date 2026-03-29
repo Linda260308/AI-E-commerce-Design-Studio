@@ -3,6 +3,7 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 starlette==0.35.0
+asgiref==3.7.2
 
 # 数据验证
 pydantic==2.5.0

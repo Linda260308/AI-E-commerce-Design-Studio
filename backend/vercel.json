@@ -2,8 +2,15 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/index.py",
+      "src": "requirements.txt",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
