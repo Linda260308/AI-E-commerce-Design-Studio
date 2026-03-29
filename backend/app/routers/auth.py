@@ -81,9 +81,10 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
             user = User(id=user_id, email=email, name=name, avatar_url=avatar_url, google_id=google_id, credits=5, plan="free")
             db.add(user)
             db.flush()  # 获取 user.id
-            oauth = OAuthAccount(user_id=user.id, provider="google", provider_account_id=google_id, access_token=access_token)
+            oauth_id = f"oauth_{secrets.token_hex(16)}"
+            oauth = OAuthAccount(id=oauth_id, user_id=user.id, provider="google", provider_account_id=google_id, access_token=access_token)
             db.add(oauth)
-            print(f"[Google OAuth] New user created: {user_id}")
+            print(f"[Google OAuth] New user created: {user_id}, oauth_id: {oauth_id}")
         
         # 创建会话
         session_token = secrets.token_urlsafe(32)

@@ -33,10 +33,15 @@ def init_db_tables():
     try:
         from app.database import engine, Base
         from app import models  # 导入模型以注册表
+        
+        # 检查表是否存在，不存在则创建
+        print("[Database] Checking tables...")
         Base.metadata.create_all(bind=engine)
-        print("[Database] Tables created successfully")
+        print("[Database] Tables initialized successfully")
     except Exception as e:
-        print(f"[Database] Error creating tables: {e}")
+        print(f"[Database] Error initializing tables: {e}")
+        import traceback
+        traceback.print_exc()
 
 # 延迟导入路由
 def get_auth_router():

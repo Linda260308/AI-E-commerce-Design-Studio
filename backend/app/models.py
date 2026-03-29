@@ -42,9 +42,11 @@ class Poster(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     user = relationship("User", back_populates="posters")
 
+import secrets
+
 class OAuthAccount(Base):
     __tablename__ = "oauth_accounts"
-    id = Column(String, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True, default=lambda: f"oauth_{secrets.token_hex(16)}")
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     provider = Column(String, default="google")
     provider_account_id = Column(String, unique=True, index=True)
