@@ -89,10 +89,17 @@ async def google_callback(code: str, state: str, db: Session = Depends(get_db)):
         # 创建会话
         session_token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(days=30)
-        app_session = UserSession(user_id=user.id, access_token=session_token, refresh_token=secrets.token_urlsafe(32), expires_at=expires_at)
+        session_id = f"session_{secrets.token_hex(16)}"
+        app_session = UserSession(
+            id=session_id,
+            user_id=user.id,
+            access_token=session_token,
+            refresh_token=secrets.token_urlsafe(32),
+            expires_at=expires_at
+        )
         db.add(app_session)
         db.commit()
-        print(f"[Google OAuth] Session created successfully")
+        print(f"[Google OAuth] Session created: {session_id}")
         
         # 重定向到前端登录页面，携带 token
         return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?token={session_token}")
