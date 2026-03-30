@@ -1,37 +1,32 @@
 """
-Vercel Python Serverless Function - Lightweight Handler
+Vercel Python Serverless Function
 Reference: https://vercel.com/docs/functions/serverless-functions/runtimes/python
 """
 import sys
 import os
 import json
 import secrets
+from http.cookies import SimpleCookie
 
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-print("Loading lightweight handler...", file=sys.stderr)
+print("Loading Vercel handler...", file=sys.stderr)
 
-async def handler(scope, receive, send):
-    """ASGI handler for Vercel"""
-    if scope['type'] != 'http':
-        return
+def handler(request):
+    """Vercel serverless handler"""
+    path = request.path
+    method = request.method
     
-    path = scope.get('path', '/')
-    method = scope.get('method', 'GET')
+    print(f"[Request] {method} {path}", file=sys.stderr)
     
     # 处理 /health 端点
     if path == '/health' or path == '/':
-        await send({
-            'type': 'http.response.start',
-            'status': 200,
-            'headers': [[b'content-type', b'application/json']],
-        })
-        await send({
-            'type': 'http.response.body',
-            'body': json.dumps({'status': 'healthy', 'path': path}).encode(),
-        })
-        return
+        return {
+            'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'status': 'healthy', 'path': path})
+        }
     
     # 处理 /api/auth/google/url 端点
     if path == '/api/auth/google/url' and method == 'GET':
@@ -45,54 +40,45 @@ async def handler(scope, receive, send):
             
             auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&scope=openid%20email%20profile&state={state}&access_type=offline&prompt=consent"
             
-            await send({
-                'type': 'http.response.start',
-                'status': 200,
-                'headers': [[b'content-type', b'application/json']],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': json.dumps({'authorization_url': auth_url, 'state': state}).encode(),
-            })
             print(f"[Google OAuth] Auth URL generated successfully", file=sys.stderr)
-            return
+            
+            return {
+                'statusCode': 200,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                },
+                'body': json.dumps({'authorization_url': auth_url, 'state': state})
+            }
         except Exception as e:
             print(f"[Google OAuth] Error: {e}", file=sys.stderr)
-            await send({
-                'type': 'http.response.start',
-                'status': 500,
-                'headers': [[b'content-type', b'application/json']],
-            })
-            await send({
-                'type': 'http.response.body',
-                'body': json.dumps({'error': str(e)}).encode(),
-            })
-            return
+            return {
+                'statusCode': 500,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': str(e)})
+            }
     
     # 处理 /api/auth/callback 端点
     if path == '/api/auth/callback' and method == 'GET':
         # 解析查询参数
-        query_string = scope.get('query_string', b'').decode()
-        params = {}
-        if query_string:
-            for param in query_string.split('&'):
-                if '=' in param:
-                    key, value = param.split('=', 1)
-                    params[key] = value
-        
-        code = params.get('code', '')
-        state = params.get('state', '')
+        query_params = request.query or {}
+        code = query_params.get('code', '')
+        state = query_params.get('state', '')
         
         if not code:
             # 重定向回登录页带错误
-            redirect_url = "https://ai-poster-studio.vercel.app/login?error=no_code"
-            await send({
-                'type': 'http.response.start',
-                'status': 302,
-                'headers': [[b'location', redirect_url.encode()]],
-            })
-            await send({'type': 'http.response.body', 'body': b''})
-            return
+            return {
+                'statusCode': 302,
+                'headers': {
+                    'Location': 'https://ai-poster-studio.vercel.app/login?error=no_code'
+                },
+                'body': ''
+            }
         
         # 处理 OAuth 回调 - 需要数据库，延迟导入
         try:
@@ -109,8 +95,8 @@ async def handler(scope, receive, send):
             print(f"[Google OAuth] Starting callback. Client ID: {client_id[:10]}...", file=sys.stderr)
             
             # 换取 token
-            async with httpx.AsyncClient() as client:
-                token_resp = await client.post(
+            with httpx.Client() as client:
+                token_resp = client.post(
                     "https://oauth2.googleapis.com/token",
                     data={
                         "client_id": client_id,
@@ -125,21 +111,20 @@ async def handler(scope, receive, send):
                 
                 if "error" in token_data:
                     print(f"[Google OAuth] Token exchange error: {token_data}", file=sys.stderr)
-                    redirect_url = f"https://ai-poster-studio.vercel.app/login?error=token_error"
-                    await send({
-                        'type': 'http.response.start',
-                        'status': 302,
-                        'headers': [[b'location', redirect_url.encode()]],
-                    })
-                    await send({'type': 'http.response.body', 'body': b''})
-                    return
+                    return {
+                        'statusCode': 302,
+                        'headers': {
+                            'Location': 'https://ai-poster-studio.vercel.app/login?error=token_error'
+                        },
+                        'body': ''
+                    }
                 
                 access_token = token_data.get("access_token")
                 print(f"[Google OAuth] Token exchange successful", file=sys.stderr)
             
             # 获取用户信息
-            async with httpx.AsyncClient() as client:
-                user_resp = await client.get(
+            with httpx.Client() as client:
+                user_resp = client.get(
                     "https://www.googleapis.com/oauth2/v2/userinfo",
                     headers={"Authorization": f"Bearer {access_token}"}
                 )
@@ -190,37 +175,32 @@ async def handler(scope, receive, send):
             finally:
                 db.close()
             
-            await send({
-                'type': 'http.response.start',
-                'status': 302,
-                'headers': [[b'location', redirect_url.encode()]],
-            })
-            await send({'type': 'http.response.body', 'body': b''})
-            return
+            return {
+                'statusCode': 302,
+                'headers': {
+                    'Location': redirect_url
+                },
+                'body': ''
+            }
             
         except Exception as e:
             import traceback
             error_stack = traceback.format_exc()
             print(f"[Google OAuth] ERROR: {e}", file=sys.stderr)
             print(f"[Google OAuth] Stack: {error_stack}", file=sys.stderr)
-            redirect_url = "https://ai-poster-studio.vercel.app/login?error=auth_failed"
-            await send({
-                'type': 'http.response.start',
-                'status': 302,
-                'headers': [[b'location', redirect_url.encode()]],
-            })
-            await send({'type': 'http.response.body', 'body': b''})
-            return
+            return {
+                'statusCode': 302,
+                'headers': {
+                    'Location': 'https://ai-poster-studio.vercel.app/login?error=auth_failed'
+                },
+                'body': ''
+            }
     
     # 404 for other routes
-    await send({
-        'type': 'http.response.start',
-        'status': 404,
-        'headers': [[b'content-type', b'application/json']],
-    })
-    await send({
-        'type': 'http.response.body',
-        'body': json.dumps({'error': 'Not found'}).encode(),
-    })
+    return {
+        'statusCode': 404,
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({'error': 'Not found'})
+    }
 
 print("Handler ready", file=sys.stderr)
