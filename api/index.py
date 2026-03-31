@@ -5,7 +5,7 @@ import sys
 import os
 import secrets
 import traceback
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import RedirectResponse, JSONResponse
 
 # 确保 api 目录在 Python 路径中 (for Vercel)
@@ -149,7 +149,7 @@ async def google_callback(request: Request):
         return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?error=auth_failed")
 
 @app.get("/api/auth/me")
-async def get_current_user(authorization: str = None):
+async def get_current_user(authorization: str = Header(default=None)):
     """Get current user info"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -203,12 +203,12 @@ async def logout(authorization: str = None):
 
 # 兼容旧版前端的 API 端点
 @app.get("/api/user/profile")
-async def get_user_profile(authorization: str = None):
+async def get_user_profile(authorization: str = Header(default=None)):
     """Get user profile (alias for /api/auth/me)"""
     return await get_current_user(authorization)
 
 @app.get("/api/user/stats")
-async def get_user_stats(authorization: str = None):
+async def get_user_stats(authorization: str = Header(default=None)):
     """Get user stats"""
     return {
         "total_posters": 0,
