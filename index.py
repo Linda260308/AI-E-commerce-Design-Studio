@@ -8,10 +8,7 @@ import traceback
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import RedirectResponse, JSONResponse
 
-# 确保 api 目录在 Python 路径中 (for Vercel)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
+# 项目根目录已在 Python 路径中
 
 app = FastAPI()
 
