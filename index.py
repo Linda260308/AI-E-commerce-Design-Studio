@@ -7,10 +7,25 @@ import secrets
 import traceback
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 # 项目根目录已在 Python 路径中
 
 app = FastAPI()
+
+# 添加 CORS 中间件 - 允许前端跨域访问
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ai-poster-studio.vercel.app",
+        "https://ai-poster-studio-backend.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:8000"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 @app.get("/health")
