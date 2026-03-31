@@ -200,3 +200,18 @@ async def logout(authorization: str = None):
         finally:
             db.close()
     return {"success": True}
+
+# 兼容旧版前端的 API 端点
+@app.get("/api/user/profile")
+async def get_user_profile(authorization: str = None):
+    """Get user profile (alias for /api/auth/me)"""
+    return await get_current_user(authorization)
+
+@app.get("/api/user/stats")
+async def get_user_stats(authorization: str = None):
+    """Get user stats"""
+    return {
+        "total_posters": 0,
+        "total_credits_used": 0,
+        "last_login_at": None
+    }
