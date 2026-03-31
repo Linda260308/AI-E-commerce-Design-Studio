@@ -3,9 +3,7 @@
   "buildCommand": "cd backend && pip install -r requirements.txt",
   "devCommand": "cd backend && uvicorn api.index:app --reload",
   "functions": {
-    "backend/api/index.py": {
-      "runtime": "@vercel/python@3.12"
-    }
+    "backend/api/index.py": "python@3.12"
   },
   "routes": [
     {
