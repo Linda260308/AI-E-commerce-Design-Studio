@@ -87,6 +87,8 @@ def handler(request):
             from sqlalchemy.orm import Session
             from datetime import datetime, timedelta
             import httpx
+            import os
+            import sys
             
             client_id = os.getenv("GOOGLE_CLIENT_ID", "")
             client_secret = os.getenv("GOOGLE_CLIENT_SECRET", "")
