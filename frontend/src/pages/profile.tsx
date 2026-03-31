@@ -301,7 +301,7 @@ export default function Profile() {
                 </div>
 
                 <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">快速操作</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Link
                       href="/editor"
@@ -309,8 +309,8 @@ export default function Profile() {
                     >
                       <span className="text-2xl mr-3">🎨</span>
                       <div>
-                        <p className="font-semibold">创作新海报</p>
-                        <p className="text-sm opacity-90">开始设计你的作品</p>
+                        <p className="font-semibold">Create New Poster</p>
+                        <p className="text-sm opacity-90">Start designing your work</p>
                       </div>
                     </Link>
                     <button
@@ -319,8 +319,8 @@ export default function Profile() {
                     >
                       <span className="text-2xl mr-3">📦</span>
                       <div>
-                        <p className="font-semibold">升级订阅</p>
-                        <p className="text-sm opacity-90">获取更多积分和功能</p>
+                        <p className="font-semibold">Upgrade Subscription</p>
+                        <p className="text-sm opacity-90">Get more credits and features</p>
                       </div>
                     </button>
                   </div>
@@ -366,7 +366,7 @@ function PostersTab() {
   };
 
   const handleDelete = async (posterId: string) => {
-    if (!confirm('确定要删除这张海报吗？')) return;
+    if (!confirm('Are you sure you want to delete this poster?')) return;
     
     try {
       const token = getAccessToken();
@@ -376,27 +376,27 @@ function PostersTab() {
       });
       if (res.ok) {
         setPosters(posters.filter(p => p.id !== posterId));
-        alert('海报已删除');
+        alert('Poster deleted');
       }
     } catch (error) {
       console.error('Failed to delete poster:', error);
-      alert('删除失败');
+      alert('Delete failed');
     }
   };
 
-  if (loading) return <div className="text-center py-12">加载中...</div>;
+  if (loading) return <div className="text-center py-12">Loading...</div>;
 
   if (posters.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-12 text-center">
         <div className="text-6xl mb-4">🎨</div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">还没有海报</h3>
-        <p className="text-gray-600 mb-6">开始创作你的第一张海报吧！</p>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Posters Yet</h3>
+        <p className="text-gray-600 mb-6">Start creating your first poster!</p>
         <Link
           href="/editor"
           className="inline-block px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
         >
-          立即创作
+          Create Now
         </Link>
       </div>
     );
@@ -404,7 +404,7 @@ function PostersTab() {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 我的海报</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">🎨 My Posters</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {posters.map(poster => (
           <div key={poster.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
@@ -478,7 +478,7 @@ function CreditsTab() {
     <div className="bg-white rounded-lg shadow-md p-6">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">💰 积分明细</h2>
       {transactions.length === 0 ? (
-        <div className="text-center py-12 text-gray-600">暂无积分记录</div>
+        <div className="text-center py-12 text-gray-600">No credit records</div>
       ) : (
         <div className="space-y-3">
           {transactions.map(tx => (
@@ -523,14 +523,14 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
       
       if (res.ok) {
         const data = await res.json();
-        alert(`订阅升级成功！赠送${data.bonus_credits}积分`);
+        alert(`Subscription upgraded! Bonus: ${data.bonus_credits} credits`);
         onUpdateUser({ ...user, plan: planType, credits: user.credits + data.bonus_credits });
       } else {
-        alert('升级失败，请稍后重试');
+        alert('Upgrade failed, please try again later');
       }
     } catch (error) {
       console.error('Failed to upgrade subscription:', error);
-      alert('升级失败');
+      alert('Upgrade failed');
     } finally {
       setLoading(false);
     }
@@ -538,50 +538,50 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">📦 订阅管理</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">📦 Subscription</h2>
       
-      {/* 当前计划 */}
+      {/* Current Plan */}
       <div className="mb-8 p-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg">
-        <p className="text-sm opacity-90 mb-2">当前计划</p>
+        <p className="text-sm opacity-90 mb-2">Current Plan</p>
         <p className="text-3xl font-bold mb-2">
-          {user.plan === 'free' ? '免费用户' : user.plan === 'pro' ? '专业版' : '企业版'}
+          {user.plan === 'free' ? 'Free' : user.plan === 'pro' ? 'Pro' : 'Enterprise'}
         </p>
-        <p className="text-sm opacity-90">当前积分：{user.credits}</p>
+        <p className="text-sm opacity-90">Credits: {user.credits}</p>
       </div>
 
-      {/* 升级选项 */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">升级计划</h3>
+      {/* Upgrade Options */}
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">Upgrade Plan</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 专业版 */}
+        {/* Pro Plan */}
         <div className="border-2 border-purple-200 rounded-lg p-6 hover:border-purple-500 transition-colors">
           <div className="mb-4">
-            <h4 className="text-xl font-bold text-gray-900">专业版</h4>
-            <p className="text-3xl font-bold text-purple-600 mt-2">¥99<span className="text-sm text-gray-600">/月</span></p>
+            <h4 className="text-xl font-bold text-gray-900">Pro</h4>
+            <p className="text-3xl font-bold text-purple-600 mt-2">¥99<span className="text-sm text-gray-600">/month</span></p>
           </div>
           <ul className="space-y-2 mb-6 text-sm text-gray-600">
-            <li>✅ 500 积分/月</li>
-            <li>✅ 高清导出</li>
-            <li>✅ 优先支持</li>
-            <li>✅ 无水印</li>
+            <li>✅ 500 credits/month</li>
+            <li>✅ HD Export</li>
+            <li>✅ Priority Support</li>
+            <li>✅ No Watermark</li>
           </ul>
           <button
             onClick={() => handleUpgrade('pro')}
             disabled={loading || user.plan === 'pro'}
             className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {user.plan === 'pro' ? '当前计划' : loading ? '处理中...' : '升级专业版'}
+            {user.plan === 'pro' ? 'Current Plan' : loading ? 'Processing...' : 'Upgrade to Pro'}
           </button>
         </div>
 
-        {/* 企业版 */}
+        {/* Enterprise Plan */}
         <div className="border-2 border-blue-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
           <div className="mb-4">
-            <h4 className="text-xl font-bold text-gray-900">企业版</h4>
-            <p className="text-3xl font-bold text-blue-600 mt-2">¥299<span className="text-sm text-gray-600">/月</span></p>
+            <h4 className="text-xl font-bold text-gray-900">Enterprise</h4>
+            <p className="text-3xl font-bold text-blue-600 mt-2">¥299<span className="text-sm text-gray-600">/month</span></p>
           </div>
           <ul className="space-y-2 mb-6 text-sm text-gray-600">
-            <li>✅ 2000 积分/月</li>
-            <li>✅ 4K 超清导出</li>
+            <li>✅ 2000 credits/month</li>
+            <li>✅ 4K Ultra HD Export</li>
             <li>✅ 专属客服</li>
             <li>✅ API 访问</li>
             <li>✅ 团队协作</li>
@@ -591,7 +591,7 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
             disabled={loading || user.plan === 'enterprise'}
             className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {user.plan === 'enterprise' ? '当前计划' : loading ? '处理中...' : '升级企业版'}
+            {user.plan === 'enterprise' ? 'Current Plan' : loading ? 'Processing...' : 'Upgrade to Enterprise'}
           </button>
         </div>
       </div>
@@ -599,7 +599,7 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
   );
 }
 
-// ==================== 设置组件 ====================
+// ==================== Settings Component ====================
 function SettingsTab({ user, onUpdateUser }: any) {
   const [name, setName] = useState(user.name || '');
   const [email, setEmail] = useState(user.email || '');
@@ -621,13 +621,13 @@ function SettingsTab({ user, onUpdateUser }: any) {
       if (res.ok) {
         const data = await res.json();
         onUpdateUser(data);
-        alert('保存成功');
+        alert('Saved successfully');
       } else {
-        alert('保存失败');
+        alert('Save failed');
       }
     } catch (error) {
       console.error('Failed to save profile:', error);
-      alert('保存失败');
+      alert('Save failed');
     } finally {
       setSaving(false);
     }
@@ -635,7 +635,7 @@ function SettingsTab({ user, onUpdateUser }: any) {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">⚙️ 账号设置</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">⚙️ Account Settings</h2>
       
       <div className="space-y-6 max-w-md">
         <div>
