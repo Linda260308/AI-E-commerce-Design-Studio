@@ -1,6 +1,6 @@
 [project]
-name = "ai-poster-studio-backend"
-version = "0.1.0"
+name = "ai-poster-studio"
+version = "1.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi==0.109.0",
@@ -23,8 +23,5 @@ dependencies = [
     "loguru==0.7.2",
 ]
 
-[tool.vercel.scripts]
-build = "pip install -r requirements.txt"
-
-[project.entry-points."vercel.app"]
-app = "index:app"
+[project.scripts]
+start = "uvicorn app:app --host 0.0.0.0 --port $PORT"
