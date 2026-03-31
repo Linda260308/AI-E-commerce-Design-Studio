@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pip install -r requirements.txt",
-  "devCommand": "uvicorn api.index:app --reload",
+  "buildCommand": "cd backend && pip install -r requirements.txt",
+  "devCommand": "cd backend && uvicorn api.index:app --reload",
   "functions": {
     "api/index.py": {
       "runtime": "@vercel/python"
