@@ -1,15 +1,14 @@
 """
 Vercel Python Serverless Function using FastAPI
+Minimal version for debugging
 """
 import sys
 import os
-import json
 import secrets
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import RedirectResponse, JSONResponse
-from urllib.parse import parse_qs, urlparse
 
-# 添加项目路径
+# 添加项目路径到 sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 app = FastAPI()
@@ -17,7 +16,7 @@ app = FastAPI()
 @app.get("/")
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    return {"status": "healthy", "path": os.path.abspath(__file__)}
 
 @app.get("/api/auth/google/url")
 async def get_google_auth_url():
@@ -43,19 +42,22 @@ async def get_google_auth_url():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error: {error_trace}", file=sys.stderr)
+        raise HTTPException(status_code=500, detail=f"{str(e)}\n\n{error_trace}")
 
 @app.get("/api/auth/callback")
 async def google_callback(request: Request):
     """Handle Google OAuth callback"""
     try:
-        # 解析查询参数
         query_params = dict(request.query_params)
         code = query_params.get('code', '')
         
         if not code:
             return RedirectResponse(url="https://ai-poster-studio.vercel.app/login?error=no_code")
         
+        # 延迟导入数据库模块
         from app.database import get_db
         from app.models import User, Session as UserSession, OAuthAccount
         from datetime import datetime, timedelta
@@ -80,6 +82,7 @@ async def google_callback(request: Request):
             token_data = token_resp.json()
             
             if "error" in token_data:
+                print(f"Token error: {token_data}", file=sys.stderr)
                 return RedirectResponse(url="https://ai-poster-studio.vercel.app/login?error=token_error")
             
             access_token = token_data.get("access_token")
@@ -135,9 +138,10 @@ async def google_callback(request: Request):
         
     except Exception as e:
         import traceback
-        print(f"[Google OAuth] ERROR: {e}")
-        print(f"[Google OAuth] Stack: {traceback.format_exc()}")
-        return RedirectResponse(url="https://ai-poster-studio.vercel.app/login?error=auth_failed")
+        error_trace = traceback.format_exc()
+        print(f"[Google OAuth] ERROR: {e}", file=sys.stderr)
+        print(f"[Google OAuth] Stack: {error_trace}", file=sys.stderr)
+        return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?error=auth_failed&detail={str(e)}")
 
 @app.get("/api/auth/me")
 async def get_current_user(authorization: str = None):
@@ -147,6 +151,7 @@ async def get_current_user(authorization: str = None):
     
     from app.database import get_db
     from sqlalchemy import func
+    from app.models import User, Session as UserSession
     
     token = authorization.replace("Bearer ", "")
     db = next(get_db())
