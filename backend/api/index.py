@@ -11,7 +11,8 @@ from http.cookies import SimpleCookie
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-print("Loading Vercel handler...", file=sys.stderr)
+# Vercel requires the handler to be at module level
+__all__ = ['handler']
 
 def handler(request):
     """Vercel serverless handler"""
@@ -205,4 +206,4 @@ def handler(request):
         'body': json.dumps({'error': 'Not found'})
     }
 
-print("Handler ready", file=sys.stderr)
+
