@@ -149,8 +149,47 @@ async def google_callback(request: Request):
         return RedirectResponse(url=f"https://ai-poster-studio.vercel.app/login?error=auth_failed")
 
 @app.get("/api/auth/me")
-async def get_current_user(authorization: str = Header(default=None)):
+async def get_current_user(request: Request):
     """Get current user info"""
+    authorization = request.headers.get("authorization")
+    return await get_current_user_impl(authorization)
+
+@app.post("/api/auth/logout")
+async def logout(authorization: str = None):
+    """Logout user"""
+    if authorization and authorization.startswith("Bearer "):
+        try:
+            from app.database import get_db
+        except ImportError:
+            raise HTTPException(status_code=500, detail="Database import failed")
+        
+        token = authorization.replace("Bearer ", "")
+        db = next(get_db())
+        try:
+            db.query(UserSession).filter(UserSession.access_token == token).delete()
+            db.commit()
+        finally:
+            db.close()
+    return {"success": True}
+
+# 兼容旧版前端的 API 端点
+@app.get("/api/user/profile")
+async def get_user_profile(request: Request):
+    """Get user profile (alias for /api/auth/me)"""
+    authorization = request.headers.get("authorization")
+    return await get_current_user_impl(authorization)
+
+@app.get("/api/user/stats")
+async def get_user_stats(request: Request):
+    """Get user stats"""
+    return {
+        "total_posters": 0,
+        "total_credits_used": 0,
+        "last_login_at": None
+    }
+
+async def get_current_user_impl(authorization: str):
+    """Get current user info (implementation)"""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token")
     
@@ -182,36 +221,3 @@ async def get_current_user(authorization: str = Header(default=None)):
         }
     finally:
         db.close()
-
-@app.post("/api/auth/logout")
-async def logout(authorization: str = None):
-    """Logout user"""
-    if authorization and authorization.startswith("Bearer "):
-        try:
-            from app.database import get_db
-        except ImportError:
-            raise HTTPException(status_code=500, detail="Database import failed")
-        
-        token = authorization.replace("Bearer ", "")
-        db = next(get_db())
-        try:
-            db.query(UserSession).filter(UserSession.access_token == token).delete()
-            db.commit()
-        finally:
-            db.close()
-    return {"success": True}
-
-# 兼容旧版前端的 API 端点
-@app.get("/api/user/profile")
-async def get_user_profile(authorization: str = Header(default=None)):
-    """Get user profile (alias for /api/auth/me)"""
-    return await get_current_user(authorization)
-
-@app.get("/api/user/stats")
-async def get_user_stats(authorization: str = Header(default=None)):
-    """Get user stats"""
-    return {
-        "total_posters": 0,
-        "total_credits_used": 0,
-        "last_login_at": None
-    }
