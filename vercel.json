@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pip install -r ./api/requirements.txt",
+  "devCommand": "uvicorn api.index:app --reload",
+  "outputDirectory": "api",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python@3.12"
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
+    }
+  ]
+}
