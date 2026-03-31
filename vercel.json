@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pip install -r ./api/requirements.txt",
-  "devCommand": "uvicorn api.index:app --reload"
+  "devCommand": "uvicorn api.index:app --reload",
+  "functions": {
+    "api/index.py": {
+      "runtime": "vercel-python@3.12.0"
+    }
+  }
 }
