@@ -107,7 +107,7 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -118,13 +118,13 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
         <div className="text-center bg-white rounded-lg shadow-md p-8 max-w-md">
           <div className="text-4xl mb-4">❌</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">加载失败</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Load Failed</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
           >
-            刷新页面
+            Refresh Page
           </button>
         </div>
       </div>
@@ -136,20 +136,20 @@ export default function Profile() {
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100 flex items-center justify-center">
         <div className="text-center bg-white rounded-lg shadow-md p-8 max-w-md">
           <div className="text-4xl mb-4">❓</div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">未找到用户信息</h2>
-          <p className="text-gray-600 mb-6">可能是登录信息已过期，请重新登录</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">User Info Not Found</h2>
+          <p className="text-gray-600 mb-6">Login session may have expired. Please login again.</p>
           <div className="space-y-3">
             <button
               onClick={() => router.push('/login')}
               className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
             >
-              返回登录
+              Back to Login
             </button>
             <button
               onClick={() => router.push('/editor')}
               className="w-full px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 rounded-lg hover:bg-purple-50"
             >
-              🎨 进入编辑器
+              🎨 Go to Editor
             </button>
           </div>
         </div>
@@ -160,10 +160,10 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100">
       <Head>
-        <title>个人中心 - AI Poster Studio</title>
+        <title>Profile - AI Poster Studio</title>
       </Head>
 
-      {/* 顶部导航 */}
+      {/* Top Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -176,14 +176,14 @@ export default function Profile() {
                 href="/editor"
                 className="text-sm px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:opacity-90"
               >
-                🎨 进入编辑器
+                🎨 Editor
               </Link>
               <span className="text-sm text-gray-600">{user.name || user.email}</span>
               <button
                 onClick={handleLogout}
                 className="text-sm text-red-600 hover:text-red-800"
               >
-                退出登录
+                Logout
               </button>
             </div>
           </div>
@@ -210,20 +210,20 @@ export default function Profile() {
                     </span>
                   </div>
                 )}
-                <h2 className="text-lg font-semibold text-gray-900">{user.name || '未设置昵称'}</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{user.name || 'Not set'}</h2>
                 <p className="text-sm text-gray-500">{user.email}</p>
                 <span className="inline-block mt-2 px-3 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
-                  {user.plan === 'free' ? '免费用户' : user.plan === 'pro' ? '专业版' : '企业版'}
+                  {user.plan === 'free' ? 'Free' : user.plan === 'pro' ? 'Pro' : 'Enterprise'}
                 </span>
               </div>
 
-              {/* 积分余额 */}
+              {/* Credits Balance */}
               <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg p-4 text-white text-center mb-6">
-                <p className="text-sm opacity-90">当前积分</p>
+                <p className="text-sm opacity-90">Credits</p>
                 <p className="text-3xl font-bold">{user.credits}</p>
               </div>
 
-              {/* 导航菜单 */}
+              {/* Navigation Menu */}
               <nav className="space-y-2">
                 <button
                   onClick={() => setActiveTab('overview')}
@@ -233,7 +233,7 @@ export default function Profile() {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  📊 概览
+                  📊 Overview
                 </button>
                 <button
                   onClick={() => setActiveTab('posters')}
@@ -243,7 +243,7 @@ export default function Profile() {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  🎨 我的海报
+                  🎨 My Posters
                 </button>
                 <button
                   onClick={() => setActiveTab('credits')}
@@ -253,7 +253,7 @@ export default function Profile() {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  💰 积分明细
+                  💰 Credits History
                 </button>
                 <button
                   onClick={() => setActiveTab('subscription')}
@@ -263,7 +263,7 @@ export default function Profile() {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  📦 订阅管理
+                  📦 Subscription
                 </button>
                 <button
                   onClick={() => setActiveTab('settings')}
@@ -273,29 +273,29 @@ export default function Profile() {
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  ⚙️ 设置
+                  ⚙️ Settings
                 </button>
               </nav>
             </div>
           </div>
 
-          {/* 右侧内容区 */}
+          {/* Main Content Area */}
           <div className="md:col-span-3">
             {activeTab === 'overview' && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 账户概览</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">📊 Account Overview</h2>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                   <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-6">
-                    <p className="text-sm text-gray-600 mb-2">海报总数</p>
+                    <p className="text-sm text-gray-600 mb-2">Total Posters</p>
                     <p className="text-3xl font-bold text-gray-900">{stats?.total_posters || 0}</p>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6">
-                    <p className="text-sm text-gray-600 mb-2">积分消耗</p>
+                    <p className="text-sm text-gray-600 mb-2">Credits Used</p>
                     <p className="text-3xl font-bold text-gray-900">{stats?.total_credits_used || 0}</p>
                   </div>
                   <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg p-6">
-                    <p className="text-sm text-gray-600 mb-2">当前积分</p>
+                    <p className="text-sm text-gray-600 mb-2">Available Credits</p>
                     <p className="text-3xl font-bold text-gray-900">{user.credits}</p>
                   </div>
                 </div>
