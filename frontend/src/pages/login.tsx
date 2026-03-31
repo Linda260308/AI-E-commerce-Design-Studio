@@ -16,13 +16,19 @@ export default function Login() {
     const token = router.query.token;
     const error = router.query.error;
     
+    console.log('Login Callback - token:', token ? 'exists' : 'missing');
+    console.log('Login Callback - error:', error);
+    console.log('Login Callback - query:', router.query);
+    
     if (error === 'auth_failed') {
       alert('Google login failed. Please try again.');
       // 清除 URL 参数
       router.replace('/login');
+      return;
     }
     
     if (token && typeof token === 'string') {
+      console.log('Login Callback - Saving token...');
       // 保存 token
       saveAuthTokens({
         access_token: token,
@@ -30,6 +36,7 @@ export default function Login() {
         expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       });
       
+      console.log('Login Callback - Token saved, redirecting to profile...');
       // 清除 URL 参数并跳转到个人中心
       router.replace('/profile');
     }

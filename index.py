@@ -120,20 +120,23 @@ async def google_callback(request: Request):
                 db.add(oauth)
             
             # 创建会话
-            session_token = secrets.token_urlsafe(32)
+            session_token = secrets.token_urlsafe(16)  # 缩短 token 长度，避免 URL 过长
             expires_at = datetime.utcnow() + timedelta(days=30)
             session_id = f"session_{secrets.token_hex(16)}"
             app_session = UserSession(
                 id=session_id,
                 user_id=user.id,
                 access_token=session_token,
-                refresh_token=secrets.token_urlsafe(32),
+                refresh_token=secrets.token_urlsafe(16),
                 expires_at=expires_at
             )
             db.add(app_session)
             db.commit()
             
-            redirect_url = f"https://ai-poster-studio.vercel.app/login?token={session_token}"
+            # 使用 URL 编码确保 token 正确传递
+            import urllib.parse
+            redirect_url = f"https://ai-poster-studio.vercel.app/login?token={urllib.parse.quote(session_token, safe='')}"
+            print(f"[Google OAuth] Redirect URL: {redirect_url}", file=sys.stderr)
         finally:
             db.close()
         
