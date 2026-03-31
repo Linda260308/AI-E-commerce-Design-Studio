@@ -54,40 +54,40 @@ export default function Profile() {
       
       console.log('Profile: Loading data from', backendUrl);
       
-      try {
-        const userRes = await fetch(`${backendUrl}/api/auth/me`, {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        console.log('Profile: User API response status:', userRes.status);
-        
-        if (userRes.status === 401 || userRes.status === 404) {
-          console.log('Profile: Token expired or API not found');
-          setError('无法加载用户信息 (状态码：' + userRes.status + ')。请尝试重新登录');
-          return;
+      const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-        
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          console.log('Profile: User data loaded:', userData);
-          setUser(userData);
-        } else {
-          const errorText = await userRes.text();
-        console.error('Profile: Failed to load user data:', userRes.status, errorText);
-        // 如果 token 存在但 API 返回错误，显示调试信息
-        if (userRes.status === 401 || userRes.status === 404) {
-          setError(`无法加载用户信息 (状态码：${userRes.status})。请尝试重新登录，或点击"进入编辑器"继续使用。`);
-        }
+      });
+      
+      console.log('Profile: User API response status:', userRes.status);
+      
+      if (userRes.status === 401 || userRes.status === 404) {
+        console.log('Profile: Token expired or API not found');
+        setError('无法加载用户信息 (状态码：' + userRes.status + ')。请尝试重新登录');
+        return;
       }
       
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        console.log('Profile: Stats data loaded:', statsData);
-        setStats(statsData);
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        console.log('Profile: User data loaded:', userData);
+        setUser(userData);
+      } else {
+        const errorText = await userRes.text();
+        console.error('Profile: Failed to load user data:', userRes.status, errorText);
+        setError(`无法加载用户信息 (状态码：${userRes.status})。请尝试重新登录`);
+        return;
       }
+      
+      // Stats API 暂时不启用（后端未实现）
+      // const statsRes = await fetch(`${backendUrl}/api/user/stats`, {
+      //   headers: { 'Authorization': `Bearer ${token}` }
+      // });
+      // if (statsRes.ok) {
+      //   const statsData = await statsRes.json();
+      //   setStats(statsData);
+      // }
     } catch (error) {
       console.error('Profile: Failed to load user data:', error);
       const errorMsg = error instanceof Error ? error.message : '未知错误';
