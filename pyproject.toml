@@ -25,3 +25,6 @@ dependencies = [
 
 [tool.vercel.scripts]
 build = "pip install -r requirements.txt"
+
+[project.entry-points."vercel.app"]
+app = "index:app"
