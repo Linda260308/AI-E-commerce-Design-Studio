@@ -349,6 +349,13 @@ async def create_paypal_order_internal(payment_order, product: dict):
     PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
     PAYPAL_API_BASE = os.getenv("PAYPAL_API_BASE", "https://api-m.sandbox.paypal.com")
     
+    # Debug logging
+    print(f"[PayPal] Client ID configured: {bool(PAYPAL_CLIENT_ID)}", file=sys.stderr)
+    print(f"[PayPal] API Base: {PAYPAL_API_BASE}", file=sys.stderr)
+    
+    if not PAYPAL_CLIENT_ID or not PAYPAL_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="PayPal credentials not configured")
+    
     auth = base64.b64encode(f"{PAYPAL_CLIENT_ID}:{PAYPAL_CLIENT_SECRET}".encode()).decode()
     
     order_data = {
@@ -364,6 +371,8 @@ async def create_paypal_order_internal(payment_order, product: dict):
     }
     
     async with httpx.AsyncClient() as client:
+        print(f"[PayPal] Creating order for: {payment_order.order_no}", file=sys.stderr)
+        
         response = await client.post(
             f"{PAYPAL_API_BASE}/v2/checkout/orders",
             headers={
@@ -373,15 +382,24 @@ async def create_paypal_order_internal(payment_order, product: dict):
             json=order_data
         )
         
+        print(f"[PayPal] Response status: {response.status_code}", file=sys.stderr)
+        print(f"[PayPal] Response body: {response.text}", file=sys.stderr)
+        
         if response.status_code != 201:
             raise HTTPException(status_code=500, detail=f"PayPal API error: {response.text}")
         
         data = response.json()
+        print(f"[PayPal] Order ID: {data.get('id')}", file=sys.stderr)
+        
         approve_url = None
         for link in data.get("links", []):
+            print(f"[PayPal] Link rel: {link.get('rel')}, href: {link.get('href')}", file=sys.stderr)
             if link.get("rel") == "approve":
                 approve_url = link.get("href")
                 break
+        
+        if not approve_url:
+            raise HTTPException(status_code=500, detail="PayPal approve URL not found in response")
         
         return {
             "order_id": data["id"],

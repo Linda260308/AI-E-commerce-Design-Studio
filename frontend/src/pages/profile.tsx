@@ -510,9 +510,12 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
     setLoading(true);
     try {
       const token = getAccessToken();
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
       
-      // 1. 创建订单
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/create-order`, {
+      console.log('[Purchase] Starting:', { productId, backendUrl });
+      
+      // 1. Create order
+      const res = await fetch(`${backendUrl}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -525,20 +528,31 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
         })
       });
       
+      console.log('[Purchase] Response status:', res.status);
+      
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.detail || '创建订单失败');
+        const errorText = await res.text();
+        console.error('[Purchase] Error:', errorText);
+        try {
+          const error = JSON.parse(errorText);
+          throw new Error(error.detail || 'Failed to create order');
+        } catch {
+          throw new Error(`HTTP ${res.status}: ${errorText}`);
+        }
       }
       
       const order = await res.json();
+      console.log('[Purchase] Order:', order);
       
       // 2. Redirect to PayPal
       if (selectedPayment === 'paypal') {
+        console.log('[Purchase] PayPal check:', { url: order.paypal_url, id: order.paypal_order_id });
+        
         if (order.paypal_url) {
+          console.log('[Purchase] Opening:', order.paypal_url);
           window.open(order.paypal_url, '_blank');
           pollOrderStatus(order.order_no);
         } else if (order.paypal_order_id) {
-          // PayPal order created but no URL (should not happen)
           alert('PayPal order created. Order ID: ' + order.paypal_order_id);
           pollOrderStatus(order.order_no);
         } else {
