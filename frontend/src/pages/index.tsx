@@ -330,7 +330,7 @@ export default function Home() {
                 Get Started
               </Link>
               <p className="text-xs text-gray-500 text-center mt-3">
-                1 次生成 = 1 credit
+                1 Generate = 1 credit
               </p>
             </div>
 

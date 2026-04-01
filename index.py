@@ -285,6 +285,7 @@ async def create_payment_order_api(request: Request):
             "id": order.id,
             "order_no": order.order_no,
             "paypal_order_id": paypal_result["order_id"],
+            "paypal_url": paypal_result["approve_url"],
             "alipay_url": paypal_result["approve_url"],
             "amount": order.amount,
             "currency": order.currency,

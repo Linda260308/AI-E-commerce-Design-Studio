@@ -534,9 +534,14 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
       
       // 2. Redirect to PayPal
       if (selectedPayment === 'paypal') {
-        if (order.alipay_url) {
-          window.open(order.alipay_url, '_blank');
-          pollOrderStatus(order.order_no);
+        if (order.paypal_order_id || order.alipay_url) {
+          const paypalUrl = order.alipay_url || order.paypal_url;
+          if (paypalUrl) {
+            window.open(paypalUrl, '_blank');
+            pollOrderStatus(order.order_no);
+          } else {
+            alert('PayPal order created. Please check your PayPal account.');
+          }
         } else {
           alert('Failed to create PayPal order. Please try again.');
         }
@@ -594,7 +599,7 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
       price: '$19',
       period: '/月',
       credits: 150,
-      features: ['150 credits/月', 'HD 分辨率', '无水印', '批量处理'],
+      features: ['150 credits/month', 'HD resolution', 'No watermark', 'Batch processing'],
       popular: true
     },
     {
@@ -603,7 +608,7 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
       price: '$199',
       period: '/年',
       credits: 1800,
-      features: ['150 credits/月', '省 15%', 'HD 分辨率', '无水印', '批量处理'],
+      features: ['150 credits/month', 'Save 15%', 'HD resolution', 'No watermark', 'Batch processing'],
       popular: false,
       savings: '省 15%'
     },
