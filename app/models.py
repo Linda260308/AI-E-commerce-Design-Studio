@@ -84,3 +84,23 @@ class UserSettings(Base):
     email_notifications = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class PaymentOrder(Base):
+    __tablename__ = "payment_orders"
+    id = Column(String, primary_key=True, index=True, default=lambda: f"pay_{secrets.token_hex(16)}")
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    order_no = Column(String, unique=True, index=True, nullable=False)  # 订单号
+    product_type = Column(String, nullable=False)  # subscription/credits
+    product_id = Column(String, nullable=False)  # pro_monthly/pro_annual/credits_100 etc
+    amount = Column(Integer, nullable=False)  # 金额（分）
+    currency = Column(String, default="USD")  # USD/CNY
+    payment_method = Column(String, nullable=False)  # paypal/alipay
+    status = Column(String, default="pending")  # pending/paid/failed/refunded
+    paypal_order_id = Column(String, unique=True, nullable=True)
+    alipay_trade_no = Column(String, unique=True, nullable=True)
+    alipay_out_trade_no = Column(String, unique=True, nullable=True)
+    credits_amount = Column(Integer, default=0)  # 购买的 credits 数量
+    subscription_months = Column(Integer, default=0)  # 订阅月数
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

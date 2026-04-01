@@ -504,96 +504,258 @@ function CreditsTab() {
 // ==================== 订阅管理组件 ====================
 function SubscriptionTab({ user, onUpdateUser }: any) {
   const [loading, setLoading] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<'paypal' | 'alipay' | null>(null);
 
-  const handleUpgrade = async (planType: string) => {
+  const handlePurchase = async (productId: string, productType: string) => {
     setLoading(true);
     try {
       const token = getAccessToken();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/subscription/upgrade`, {
+      
+      // 1. 创建订单
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          plan_type: planType,
-          payment_method: 'stripe'
+          product_type: productType,
+          product_id: productId,
+          payment_method: selectedPayment
         })
       });
       
-      if (res.ok) {
-        const data = await res.json();
-        alert(`Subscription upgraded! Bonus: ${data.bonus_credits} credits`);
-        onUpdateUser({ ...user, plan: planType, credits: user.credits + data.bonus_credits });
-      } else {
-        alert('Upgrade failed, please try again later');
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.detail || '创建订单失败');
       }
-    } catch (error) {
-      console.error('Failed to upgrade subscription:', error);
-      alert('Upgrade failed');
+      
+      const order = await res.json();
+      
+      // 2. 根据支付方式跳转
+      if (selectedPayment === 'paypal') {
+        // PayPal：跳转到 PayPal 支付页面
+        if (order.alipay_url) {
+          window.open(order.alipay_url, '_blank');
+          // 轮询订单状态
+          pollOrderStatus(order.order_no);
+        } else {
+          alert('PayPal 订单创建失败，请重试');
+        }
+      } else if (selectedPayment === 'alipay') {
+        // 支付宝：显示二维码
+        showAlipayQR(order.alipay_url, order.order_no);
+      }
+    } catch (error: any) {
+      console.error('Purchase failed:', error);
+      alert(`购买失败：${error.message}`);
     } finally {
       setLoading(false);
+      setSelectedPayment(null);
     }
   };
 
+  const pollOrderStatus = async (orderNo: string) => {
+    const token = getAccessToken();
+    const maxAttempts = 30; // 最多轮询 30 次（5 分钟）
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/order/${orderNo}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+          const order = await res.json();
+          if (order.status === 'paid') {
+            alert('支付成功！Credits 已到账');
+            onUpdateUser({ ...user, credits: user.credits + order.credits_amount, plan: 'pro' });
+            return;
+          } else if (order.status === 'failed') {
+            alert('支付失败，请重试');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Poll error:', error);
+      }
+      
+      attempts++;
+      if (attempts < maxAttempts) {
+        setTimeout(poll, 10000); // 每 10 秒轮询一次
+      }
+    };
+    
+    poll();
+  };
+
+  const showAlipayQR = (qrUrl: string, orderNo: string) => {
+    // 创建模态框显示二维码
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+      <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        <h3 class="text-xl font-bold mb-4">支付宝扫码支付</h3>
+        <div class="w-64 h-64 bg-gray-100 mx-auto mb-4 flex items-center justify-center rounded-lg">
+          <img src="${qrUrl}" alt="Alipay QR" class="w-full h-full object-contain" />
+        </div>
+        <p class="text-sm text-gray-600 mb-4">打开支付宝扫描二维码</p>
+        <p class="text-xs text-gray-500 mb-6">订单号：${orderNo}</p>
+        <button onclick="this.closest('.fixed').remove()" class="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+          关闭
+        </button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // 开始轮询订单状态
+    pollOrderStatus(orderNo);
+  };
+
+  const products = [
+    {
+      id: 'pro_monthly',
+      name: 'Pro 月度',
+      price: '$19',
+      period: '/月',
+      credits: 150,
+      features: ['150 credits/月', 'HD 分辨率', '无水印', '批量处理'],
+      popular: true
+    },
+    {
+      id: 'pro_annual',
+      name: 'Pro 年度',
+      price: '$199',
+      period: '/年',
+      credits: 1800,
+      features: ['150 credits/月', '省 15%', 'HD 分辨率', '无水印', '批量处理'],
+      popular: false,
+      savings: '省 15%'
+    },
+    {
+      id: 'credits_100',
+      name: '100 Credits',
+      price: '$9.99',
+      period: '',
+      credits: 100,
+      features: ['100 credits', '永久有效', '随时使用'],
+      popular: false
+    },
+    {
+      id: 'credits_500',
+      name: '500 Credits',
+      price: '$39.99',
+      period: '',
+      credits: 500,
+      features: ['500 credits', '永久有效', '超值优惠'],
+      popular: false,
+      savings: '省 20%'
+    }
+  ];
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">📦 Subscription</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">📦 订阅与充值</h2>
       
       {/* Current Plan */}
       <div className="mb-8 p-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg">
-        <p className="text-sm opacity-90 mb-2">Current Plan</p>
+        <p className="text-sm opacity-90 mb-2">当前套餐</p>
         <p className="text-3xl font-bold mb-2">
           {user.plan === 'free' ? 'Free' : user.plan === 'pro' ? 'Pro' : 'Enterprise'}
         </p>
-        <p className="text-sm opacity-90">Credits: {user.credits}</p>
+        <p className="text-sm opacity-90">可用 Credits: {user.credits}</p>
       </div>
 
-      {/* Upgrade Options */}
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Upgrade Plan</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Pro Plan */}
-        <div className="border-2 border-purple-200 rounded-lg p-6 hover:border-purple-500 transition-colors">
-          <div className="mb-4">
-            <h4 className="text-xl font-bold text-gray-900">Pro</h4>
-            <p className="text-3xl font-bold text-purple-600 mt-2">¥99<span className="text-sm text-gray-600">/month</span></p>
-          </div>
-          <ul className="space-y-2 mb-6 text-sm text-gray-600">
-            <li>✅ 500 credits/month</li>
-            <li>✅ HD Export</li>
-            <li>✅ Priority Support</li>
-            <li>✅ No Watermark</li>
-          </ul>
+      {/* Payment Method Selection */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3">选择支付方式</h3>
+        <div className="grid grid-cols-2 gap-4">
           <button
-            onClick={() => handleUpgrade('pro')}
-            disabled={loading || user.plan === 'pro'}
-            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => setSelectedPayment('paypal')}
+            className={`p-4 border-2 rounded-lg flex items-center justify-center space-x-3 transition-all ${
+              selectedPayment === 'paypal'
+                ? 'border-blue-600 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
           >
-            {user.plan === 'pro' ? 'Current Plan' : loading ? 'Processing...' : 'Upgrade to Pro'}
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 4.47a.77.77 0 0 1 .76-.63h7.194c1.024 0 1.925.183 2.683.548.758.365 1.347.885 1.767 1.56.42.675.63 1.465.63 2.37 0 1.155-.315 2.175-.945 3.06-.63.885-1.5 1.575-2.61 2.07-1.11.495-2.385.743-3.825.743h-1.935a.641.641 0 0 0-.633.74l-.765 4.86a.641.641 0 0 1-.633.555z"/>
+            </svg>
+            <span className="font-semibold">PayPal</span>
+          </button>
+          <button
+            onClick={() => setSelectedPayment('alipay')}
+            className={`p-4 border-2 rounded-lg flex items-center justify-center space-x-3 transition-all ${
+              selectedPayment === 'alipay'
+                ? 'border-blue-600 bg-blue-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+            </svg>
+            <span className="font-semibold">支付宝</span>
           </button>
         </div>
+      </div>
 
-        {/* Enterprise Plan */}
-        <div className="border-2 border-blue-200 rounded-lg p-6 hover:border-blue-500 transition-colors">
-          <div className="mb-4">
-            <h4 className="text-xl font-bold text-gray-900">Enterprise</h4>
-            <p className="text-3xl font-bold text-blue-600 mt-2">¥299<span className="text-sm text-gray-600">/month</span></p>
-          </div>
-          <ul className="space-y-2 mb-6 text-sm text-gray-600">
-            <li>✅ 2000 credits/month</li>
-            <li>✅ 4K Ultra HD Export</li>
-            <li>✅ 专属客服</li>
-            <li>✅ API 访问</li>
-            <li>✅ 团队协作</li>
-          </ul>
-          <button
-            onClick={() => handleUpgrade('enterprise')}
-            disabled={loading || user.plan === 'enterprise'}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      {/* Products Grid */}
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">选择套餐</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {products.map(product => (
+          <div
+            key={product.id}
+            className={`border-2 rounded-lg p-6 transition-all ${
+              product.popular
+                ? 'border-purple-500 bg-purple-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
           >
-            {user.plan === 'enterprise' ? 'Current Plan' : loading ? 'Processing...' : 'Upgrade to Enterprise'}
-          </button>
-        </div>
+            {product.popular && (
+              <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                热门
+              </div>
+            )}
+            {product.savings && (
+              <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-lg">
+                {product.savings}
+              </div>
+            )}
+            
+            <div className="mb-4">
+              <h4 className="text-xl font-bold text-gray-900">{product.name}</h4>
+              <div className="mt-2">
+                <span className="text-3xl font-bold text-purple-600">{product.price}</span>
+                <span className="text-gray-600">{product.period}</span>
+              </div>
+            </div>
+            
+            <ul className="space-y-2 mb-6 text-sm text-gray-600">
+              {product.features.map((feature, i) => (
+                <li key={i} className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            
+            <button
+              onClick={() => handlePurchase(product.id, product.id.includes('credits') ? 'credits' : 'subscription')}
+              disabled={loading || !selectedPayment}
+              className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {!selectedPayment ? '请选择支付方式' : loading ? '处理中...' : `购买 - ${product.name}`}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Payment Notice */}
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-sm text-blue-800">
+          💡 <strong>提示：</strong>选择支付方式后点击购买按钮，将跳转到支付页面或显示二维码。支付成功后 Credits 立即到账。
+        </p>
       </div>
     </div>
   );

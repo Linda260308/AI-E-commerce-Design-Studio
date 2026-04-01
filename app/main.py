@@ -38,10 +38,15 @@ def get_users_router():
     from app.routers import users
     return users.router
 
+def get_payments_router():
+    from app.routers import payments
+    return payments.router
+
 # 注册路由（延迟导入）
 try:
     app.include_router(get_auth_router())
     app.include_router(get_users_router())
+    app.include_router(get_payments_router())
     print("[App] Routers loaded successfully", file=sys.stderr)
 except Exception as e:
     print(f"Warning: Could not load routers: {e}", file=sys.stderr)

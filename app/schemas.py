@@ -83,3 +83,35 @@ class SubscriptionResponse(BaseModel):
 class SubscriptionUpgrade(BaseModel):
     plan_type: str  # pro/enterprise
     payment_method: str  # stripe/wechat
+
+class PaymentOrderCreate(BaseModel):
+    product_type: str  # subscription/credits
+    product_id: str  # pro_monthly/pro_annual/credits_100 etc
+    payment_method: str  # paypal/alipay
+
+class PaymentOrderResponse(BaseModel):
+    id: str
+    order_no: str
+    product_type: str
+    product_id: str
+    amount: int
+    currency: str
+    payment_method: str
+    status: str
+    credits_amount: int
+    subscription_months: int
+    paypal_order_id: Optional[str] = None
+    alipay_url: Optional[str] = None
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class PayPalOrderResponse(BaseModel):
+    order_id: str
+    approve_url: str
+    status: str
+
+class AlipayQrResponse(BaseModel):
+    qr_code: str
+    out_trade_no: str
+    total_amount: str
