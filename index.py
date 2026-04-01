@@ -5,6 +5,8 @@ import sys
 import os
 import secrets
 import traceback
+import base64
+from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException, Header
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -202,6 +204,192 @@ async def get_user_stats(request: Request):
         "total_credits_used": 0,
         "last_login_at": None
     }
+
+# ==================== Payment APIs ====================
+
+@app.post("/api/payment/create-order")
+async def create_payment_order_api(request: Request):
+    """Create payment order"""
+    try:
+        from app.database import get_db
+        from app.models import User, Session as UserSession, PaymentOrder
+        from app.routers.payments import create_payment_order as payment_handler
+        from fastapi import Depends
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+    
+    authorization = request.headers.get("authorization")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    token = authorization.replace("Bearer ", "")
+    db = next(get_db())
+    try:
+        # Get user from token
+        from sqlalchemy import func
+        session = db.query(UserSession).filter(
+            UserSession.access_token == token,
+            UserSession.expires_at > func.now()
+        ).first()
+        if not session:
+            raise HTTPException(status_code=401, detail="Token expired")
+        
+        user = db.query(User).filter(User.id == session.user_id).first()
+        
+        # Parse request body
+        body = await request.json()
+        
+        # Create order
+        order_no = f"ORD{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{secrets.token_hex(4)}"
+        product_id = body.get("product_id")
+        payment_method = body.get("payment_method")
+        
+        # Products config
+        PRODUCTS = {
+            "pro_monthly": {"amount": 1900, "currency": "USD", "credits": 150, "months": 1},
+            "pro_annual": {"amount": 19900, "currency": "USD", "credits": 150, "months": 12},
+            "credits_100": {"amount": 999, "currency": "USD", "credits": 100, "months": 0},
+            "credits_500": {"amount": 3999, "currency": "USD", "credits": 500, "months": 0},
+        }
+        
+        if product_id not in PRODUCTS:
+            raise HTTPException(status_code=400, detail="Invalid product")
+        
+        product = PRODUCTS[product_id]
+        
+        if payment_method != "paypal":
+            raise HTTPException(status_code=400, detail="Only PayPal is supported")
+        
+        # Create order record
+        order = PaymentOrder(
+            user_id=user.id,
+            order_no=order_no,
+            product_type=body.get("product_type", "subscription"),
+            product_id=product_id,
+            amount=product["amount"],
+            currency=product["currency"],
+            payment_method=payment_method,
+            credits_amount=product["credits"],
+            subscription_months=product["months"]
+        )
+        db.add(order)
+        db.commit()
+        db.refresh(order)
+        
+        # Create PayPal order
+        paypal_result = await create_paypal_order_internal(order, product)
+        order.paypal_order_id = paypal_result["order_id"]
+        db.commit()
+        
+        return {
+            "id": order.id,
+            "order_no": order.order_no,
+            "paypal_order_id": paypal_result["order_id"],
+            "alipay_url": paypal_result["approve_url"],
+            "amount": order.amount,
+            "currency": order.currency,
+            "status": order.status,
+            "credits_amount": order.credits_amount,
+            "created_at": order.created_at.isoformat()
+        }
+    finally:
+        db.close()
+
+@app.get("/api/payment/order/{order_no}")
+async def get_order_status_api(order_no: str, request: Request):
+    """Get order status"""
+    try:
+        from app.database import get_db
+        from app.models import PaymentOrder, Session as UserSession
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Database import failed")
+    
+    authorization = request.headers.get("authorization")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    token = authorization.replace("Bearer ", "")
+    db = next(get_db())
+    try:
+        from sqlalchemy import func
+        session = db.query(UserSession).filter(
+            UserSession.access_token == token,
+            UserSession.expires_at > func.now()
+        ).first()
+        if not session:
+            raise HTTPException(status_code=401, detail="Token expired")
+        
+        order = db.query(PaymentOrder).filter(
+            PaymentOrder.order_no == order_no,
+            PaymentOrder.user_id == session.user_id
+        ).first()
+        
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+        
+        return {
+            "id": order.id,
+            "order_no": order.order_no,
+            "status": order.status,
+            "amount": order.amount,
+            "currency": order.currency,
+            "credits_amount": order.credits_amount,
+            "paid_at": order.paid_at.isoformat() if order.paid_at else None,
+            "created_at": order.created_at.isoformat()
+        }
+    finally:
+        db.close()
+
+async def create_paypal_order_internal(payment_order, product: dict):
+    """Create PayPal order"""
+    import base64
+    import httpx
+    
+    PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
+    PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "")
+    PAYPAL_API_BASE = os.getenv("PAYPAL_API_BASE", "https://api-m.sandbox.paypal.com")
+    
+    auth = base64.b64encode(f"{PAYPAL_CLIENT_ID}:{PAYPAL_CLIENT_SECRET}".encode()).decode()
+    
+    order_data = {
+        "intent": "CAPTURE",
+        "purchase_units": [{
+            "reference_id": payment_order.order_no,
+            "amount": {
+                "currency_code": product["currency"],
+                "value": str(product["amount"] / 100)
+            },
+            "description": product["name"]
+        }]
+    }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{PAYPAL_API_BASE}/v2/checkout/orders",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth}"
+            },
+            json=order_data
+        )
+        
+        if response.status_code != 201:
+            raise HTTPException(status_code=500, detail=f"PayPal API error: {response.text}")
+        
+        data = response.json()
+        approve_url = None
+        for link in data.get("links", []):
+            if link.get("rel") == "approve":
+                approve_url = link.get("href")
+                break
+        
+        return {
+            "order_id": data["id"],
+            "approve_url": approve_url,
+            "status": data["status"]
+        }
+
+# ==================== Helper Functions ====================
 
 async def get_current_user_impl(authorization: str):
     """Get current user info (implementation)"""
