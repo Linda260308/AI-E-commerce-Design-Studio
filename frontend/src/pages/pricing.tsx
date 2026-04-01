@@ -10,51 +10,35 @@ export default function Pricing() {
       name: 'Free',
       price: 0,
       period: '永远免费',
-      description: '适合试用和小型项目',
+      description: '适合试用和体验',
       features: [
-        '5 次生成/月',
+        '5 credits/月',
         '带水印',
-        '标准清晰度',
-        '基础字体和颜色',
-        '邮件支持'
+        '标准分辨率 (1080x1080)',
+        '基础模板',
+        '1 次生成 = 1 credit'
       ],
       cta: '开始免费使用',
       highlighted: false
     },
     {
       name: 'Pro',
-      price: isAnnual ? 99 : 9.9,
+      price: isAnnual ? 199 : 19,
       period: isAnnual ? '/年' : '/月',
-      description: '适合电商卖家和专业设计师',
+      description: '适合电商卖家和专业创作者',
       features: [
-        '50 次生成/月',
+        '150 credits/月',
         '无水印',
-        '高清质量 (4K)',
-        '所有字体和颜色',
+        'HD 分辨率 (2048x2048)',
+        '全部模板',
         '可编辑文字',
-        '优先支持',
+        '批量处理 (最多 5 张)',
+        '邮件优先支持',
         '商业使用授权'
       ],
       cta: '开始 7 天免费试用',
       highlighted: true,
-      savings: isAnnual ? '省 20%' : null
-    },
-    {
-      name: 'Enterprise',
-      price: '定制',
-      period: '联系销售',
-      description: '适合团队和企业',
-      features: [
-        '无限生成',
-        'API 访问',
-        '团队协作',
-        '自定义品牌',
-        '专属客户经理',
-        'SLA 保障',
-        '私有化部署'
-      ],
-      cta: '联系销售',
-      highlighted: false
+      savings: isAnnual ? '省 15%' : null
     }
   ];
 
@@ -123,7 +107,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -190,12 +174,12 @@ export default function Pricing() {
               <p className="text-gray-600">当然可以！你可以随时取消订阅，已支付的费用不会退还，但你可以继续使用到周期结束。</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">🎨 生成次数如何计算？</h3>
-              <p className="text-gray-600">每次 AI 生成海报算作 1 次。编辑文字、调整颜色不消耗次数。每月 1 号重置次数。</p>
+              <h3 className="font-semibold text-lg mb-2">🎨 Credits 如何计算？</h3>
+              <p className="text-gray-600">每次 AI 生成海报消耗 1 credit。编辑文字、调整颜色、更换模板不消耗 credits。每月 1 号重置，未用完的 credits 不结转。</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">📧 如何获取发票？</h3>
-              <p className="text-gray-600">付款后系统会自动发送发票到你的邮箱。如需公司抬头发票，请联系客服。</p>
+              <h3 className="font-semibold text-lg mb-2">📧 Pro 用户有发票吗？</h3>
+              <p className="text-gray-600">付款后系统会自动发送发票到你的邮箱。如需公司抬头发票，请在账户设置中填写公司信息。</p>
             </div>
           </div>
         </div>
@@ -204,7 +188,7 @@ export default function Pricing() {
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-4">准备好开始创作了吗？</h2>
           <p className="text-xl text-gray-600 mb-8">
-            加入 10,000+ 电商卖家，用 AI 提升设计效率
+            3 分钟创建专业电商海报，无需设计经验
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/signup" className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-purple-700 hover:to-blue-700 shadow-lg">
