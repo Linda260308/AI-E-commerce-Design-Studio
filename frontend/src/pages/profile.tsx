@@ -534,14 +534,13 @@ function SubscriptionTab({ user, onUpdateUser }: any) {
       
       // 2. Redirect to PayPal
       if (selectedPayment === 'paypal') {
-        if (order.paypal_order_id || order.alipay_url) {
-          const paypalUrl = order.alipay_url || order.paypal_url;
-          if (paypalUrl) {
-            window.open(paypalUrl, '_blank');
-            pollOrderStatus(order.order_no);
-          } else {
-            alert('PayPal order created. Please check your PayPal account.');
-          }
+        if (order.paypal_url) {
+          window.open(order.paypal_url, '_blank');
+          pollOrderStatus(order.order_no);
+        } else if (order.paypal_order_id) {
+          // PayPal order created but no URL (should not happen)
+          alert('PayPal order created. Order ID: ' + order.paypal_order_id);
+          pollOrderStatus(order.order_no);
         } else {
           alert('Failed to create PayPal order. Please try again.');
         }
