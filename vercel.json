@@ -2,13 +2,8 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/.next",
   "framework": "nextjs",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/index.py"
-    }
-  ],
   "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://ai-poster-studio.vercel.app"
+    "NEXT_PUBLIC_BACKEND_URL": "https://ai-poster-studio-b711.vercel.app",
+    "NEXT_PUBLIC_APP_URL": "https://ai-poster-studio.vercel.app"
   }
 }
