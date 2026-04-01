@@ -9,43 +9,43 @@ export default function Pricing() {
     {
       name: 'Free',
       price: 0,
-      period: '永远免费',
-      description: '适合试用和体验',
+      period: 'Forever Free',
+      description: 'Perfect for trying out',
       features: [
-        '5 credits/月',
-        '带水印',
-        '标准分辨率 (1080x1080)',
-        '基础模板',
-        '1 次生成 = 1 credit'
+        '5 credits/month',
+        'Watermarked',
+        'Standard resolution (1080x1080)',
+        'Basic templates',
+        '1 Generate = 1 credit'
       ],
-      cta: '开始免费使用',
+      cta: 'Get Started',
       highlighted: false
     },
     {
       name: 'Pro',
       price: isAnnual ? 199 : 19,
-      period: isAnnual ? '/年' : '/月',
-      description: '适合电商卖家和专业创作者',
+      period: isAnnual ? '/year' : '/month',
+      description: 'For e-commerce sellers and creators',
       features: [
-        '150 credits/月',
-        '无水印',
-        'HD 分辨率 (2048x2048)',
-        '全部模板',
-        '可编辑文字',
-        '批量处理 (最多 5 张)',
-        '邮件优先支持',
-        '商业使用授权'
+        '150 credits/month',
+        'No watermark',
+        'HD resolution (2048x2048)',
+        'All templates',
+        'Editable text',
+        'Batch processing (up to 5)',
+        'Priority email support',
+        'Commercial use license'
       ],
-      cta: '开始 7 天免费试用',
+      cta: 'Start 7-Day Free Trial',
       highlighted: true,
-      savings: isAnnual ? '省 15%' : null
+      savings: isAnnual ? 'Save 15%' : null
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-100">
       <Head>
-        <title>定价 - AI Poster Studio</title>
+        <title>Pricing - AI Poster Studio</title>
       </Head>
 
       {/* Navigation */}
@@ -60,10 +60,10 @@ export default function Pricing() {
             </Link>
             <div className="flex space-x-4">
               <Link href="/login" className="text-gray-700 hover:text-purple-600 px-3 py-2">
-                登录
+                Login
               </Link>
               <Link href="/signup" className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700">
-                注册
+                Sign Up
               </Link>
             </div>
           </div>
@@ -74,16 +74,16 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            简单透明的定价
+            Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            选择适合你的套餐，随时升级或取消
+            Choose your plan, upgrade or cancel anytime
           </p>
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center space-x-4 mb-8">
             <span className={`text-sm ${!isAnnual ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-              月付
+              Monthly
             </span>
             <button
               onClick={() => setIsAnnual(!isAnnual)}
@@ -98,9 +98,9 @@ export default function Pricing() {
               />
             </button>
             <span className={`text-sm ${isAnnual ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
-              年付
+              Annual
               <span className="ml-2 inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                省 20%
+                Save 20%
               </span>
             </span>
           </div>
@@ -164,89 +164,89 @@ export default function Pricing() {
 
         {/* Credit Usage Guide */}
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-16">
-          <h2 className="text-3xl font-bold text-center mb-6">💡 Credits 使用指南</h2>
+          <h2 className="text-3xl font-bold text-center mb-6">💡 How Credits Work</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="font-semibold text-lg mb-3 text-purple-700">消耗 Credits 的操作</h3>
+              <h3 className="font-semibold text-lg mb-3 text-purple-700">Uses Credits</h3>
               <ul className="space-y-2">
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2 mt-0.5">●</span>
-                  <span className="text-gray-700"><strong>AI 生成海报</strong>：1 次生成 = 1 credit</span>
+                  <span className="text-gray-700"><strong>AI Generate</strong>: 1 credit per generation</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2 mt-0.5">●</span>
-                  <span className="text-gray-700"><strong>HD 分辨率导出</strong>：额外 +1 credit/张</span>
+                  <span className="text-gray-700"><strong>HD Export</strong>: +1 credit per image</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2 mt-0.5">●</span>
-                  <span className="text-gray-700"><strong>批量处理</strong>：每张图独立计算</span>
+                  <span className="text-gray-700"><strong>Batch Processing</strong>: Per image basis</span>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-3 text-green-700">不消耗 Credits 的操作</h3>
+              <h3 className="font-semibold text-lg mb-3 text-green-700">Free Operations</h3>
               <ul className="space-y-2">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                  <span className="text-gray-700"><strong>编辑文字</strong>：添加、修改、删除文字</span>
+                  <span className="text-gray-700"><strong>Edit Text</strong>: Add, modify, delete</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                  <span className="text-gray-700"><strong>调整颜色/字体</strong>：任意修改样式</span>
+                  <span className="text-gray-700"><strong>Adjust Colors/Fonts</strong>: Any style changes</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                  <span className="text-gray-700"><strong>更换模板</strong>：切换不同设计</span>
+                  <span className="text-gray-700"><strong>Change Templates</strong>: Switch designs</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-0.5">✓</span>
-                  <span className="text-gray-700"><strong>保存草稿</strong>：无限次保存</span>
+                  <span className="text-gray-700"><strong>Save Drafts</strong>: Unlimited saves</span>
                 </li>
               </ul>
             </div>
           </div>
           <div className="mt-6 p-4 bg-white rounded-lg border border-purple-200">
             <p className="text-sm text-gray-600 text-center">
-              💡 <strong>小贴士：</strong>每月 1 号重置 credits，未用完的 credits 不结转到下月。升级套餐立即生效，赠送的 credits 当月有效。
+              💡 <strong>Note:</strong> Credits reset on the 1st of each month. Unused credits don't roll over. Plan upgrades take effect immediately with prorated credits.
             </p>
           </div>
         </div>
 
         {/* FAQ */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8">常见问题</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
-              <h3 className="font-semibold text-lg mb-2">💳 如何付款？</h3>
-              <p className="text-gray-600">我们支持 PayPal、信用卡等多种支付方式。所有交易都是安全的。</p>
+              <h3 className="font-semibold text-lg mb-2">💳 How to pay?</h3>
+              <p className="text-gray-600">We accept PayPal, credit cards, and other payment methods. All transactions are secure.</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">🔄 可以随时取消吗？</h3>
-              <p className="text-gray-600">当然可以！你可以随时取消订阅，已支付的费用不会退还，但你可以继续使用到周期结束。</p>
+              <h3 className="font-semibold text-lg mb-2">🔄 Can I cancel anytime?</h3>
+              <p className="text-gray-600">Yes! You can cancel anytime. Payments are non-refundable but you keep access until the end of your billing period.</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">📧 Pro 用户有发票吗？</h3>
-              <p className="text-gray-600">付款后系统会自动发送发票到你的邮箱。如需公司抬头发票，请在账户设置中填写公司信息。</p>
+              <h3 className="font-semibold text-lg mb-2">📧 Do Pro users get invoices?</h3>
+              <p className="text-gray-600">Invoices are automatically sent to your email after payment. For company invoices, add your company details in account settings.</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">🎯 Credits 用完了怎么办？</h3>
-              <p className="text-gray-600">可以在个人中心购买额外 credits 包，或升级到 Pro 套餐获得更多额度。</p>
+              <h3 className="font-semibold text-lg mb-2">🎯 What if I run out of credits?</h3>
+              <p className="text-gray-600">You can purchase additional credit packs in your profile or upgrade to Pro for more credits.</p>
             </div>
           </div>
         </div>
 
         {/* CTA */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold mb-4">准备好开始创作了吗？</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to Create Stunning Posters?</h2>
           <p className="text-xl text-gray-600 mb-8">
-            3 分钟创建专业电商海报，无需设计经验
+            Create professional e-commerce posters in 3 minutes, no design experience needed
           </p>
           <div className="flex justify-center space-x-4">
             <Link href="/signup" className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-purple-700 hover:to-blue-700 shadow-lg">
-              免费开始
+              Start Free
             </Link>
             <Link href="/editor" className="bg-white text-purple-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 shadow-lg border-2 border-purple-600">
-              先试试看
+              Try It Now
             </Link>
           </div>
         </div>

@@ -378,7 +378,7 @@ export default function Home() {
                 Start 7-Day Free Trial
               </Link>
               <p className="text-xs text-purple-100 text-center mt-3 opacity-90">
-                1 次生成 = 1 credit · 随时取消
+                1 Generate = 1 credit · Cancel anytime
               </p>
             </div>
           </div>
@@ -393,22 +393,22 @@ export default function Home() {
           {/* Credit Usage Guide */}
           <div className="mt-12 max-w-3xl mx-auto">
             <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">💡 Credits 如何计算？</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">💡 How Credits Work?</h3>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-semibold text-red-600 mb-2 text-sm">消耗 Credits</h4>
+                  <h4 className="font-semibold text-red-600 mb-2 text-sm">Uses Credits</h4>
                   <ul className="space-y-1 text-sm text-gray-600">
-                    <li>• AI 生成海报：1 credit/次</li>
-                    <li>• HD 导出：+1 credit/张</li>
-                    <li>• 批量处理：每张独立计算</li>
+                    <li>• AI Generate: 1 credit/time</li>
+                    <li>• HD Export: +1 credit/image</li>
+                    <li>• Batch Processing: Per image</li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-green-600 mb-2 text-sm">免费操作</h4>
+                  <h4 className="font-semibold text-green-600 mb-2 text-sm">Free Operations</h4>
                   <ul className="space-y-1 text-sm text-gray-600">
-                    <li>• 编辑文字/颜色/字体</li>
-                    <li>• 更换模板</li>
-                    <li>• 保存草稿</li>
+                    <li>• Edit Text/Color/Font</li>
+                    <li>• Change Templates</li>
+                    <li>• Save Drafts</li>
                   </ul>
                 </div>
               </div>
