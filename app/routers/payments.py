@@ -22,19 +22,12 @@ PAYPAL_CLIENT_ID = "AQkquBDf1zctJOWGKWUEtKXm6qVfqUE7t8zDvWvJzrKj8Jvz8Z8Z8Z8Z8Z8Z
 PAYPAL_CLIENT_SECRET = "EHbZ9vP8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8Z8"  # 测试环境
 PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"  # 生产环境：https://api-m.paypal.com
 
-ALIPY_APP_ID = "9021000131658669"  # 替换为你的支付宝 APP_ID
-ALIPY_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA... 替换为你的私钥 ...
------END RSA PRIVATE KEY-----"""
-ALIPY_ALIPAY_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA... 替换为支付宝公钥 ...
------END PUBLIC KEY-----"""
-ALIPY_GATEWAY = "https://openapi.alipay.com/gateway.do"
 
-# 产品定价配置（单位：分）
+
+# Product pricing configuration (in cents)
 PRODUCTS = {
-    "pro_monthly": {"amount": 1900, "currency": "USD", "credits": 150, "months": 1, "name": "Pro 月度"},
-    "pro_annual": {"amount": 19900, "currency": "USD", "credits": 150, "months": 12, "name": "Pro 年度"},
+    "pro_monthly": {"amount": 1900, "currency": "USD", "credits": 150, "months": 1, "name": "Pro Monthly"},
+    "pro_annual": {"amount": 19900, "currency": "USD", "credits": 150, "months": 12, "name": "Pro Annual"},
     "credits_100": {"amount": 999, "currency": "USD", "credits": 100, "months": 0, "name": "100 Credits"},
     "credits_500": {"amount": 3999, "currency": "USD", "credits": 500, "months": 0, "name": "500 Credits"},
 }
@@ -52,19 +45,19 @@ async def create_payment_order(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """创建支付订单"""
+    """Create payment order"""
     if order.product_id not in PRODUCTS:
         raise HTTPException(status_code=400, detail="Invalid product")
     
     product = PRODUCTS[order.product_id]
     
-    if order.payment_method not in ["paypal", "alipay"]:
-        raise HTTPException(status_code=400, detail="Unsupported payment method")
+    if order.payment_method not in ["paypal"]:
+        raise HTTPException(status_code=400, detail="Unsupported payment method. Currently only PayPal is supported.")
     
-    # 生成订单号
+    # Generate order number
     order_no = f"ORD{datetime.utcnow().strftime('%Y%m%d%H%M%S')}{secrets.token_hex(4)}"
     
-    # 创建订单记录
+    # Create order record
     payment_order = PaymentOrder(
         user_id=current_user.id,
         order_no=order_no,
@@ -80,7 +73,7 @@ async def create_payment_order(
     db.commit()
     db.refresh(payment_order)
     
-    # 根据支付方式创建支付
+    # Create PayPal order
     if order.payment_method == "paypal":
         paypal_data = await create_paypal_order(payment_order, product)
         payment_order.paypal_order_id = paypal_data["order_id"]
@@ -90,19 +83,13 @@ async def create_payment_order(
             paypal_order_id=paypal_data["order_id"],
             alipay_url=paypal_data.get("approve_url")
         )
-    else:  # alipay
-        alipay_data = await create_alipay_order(payment_order, product, current_user)
-        payment_order.alipay_out_trade_no = alipay_data["out_trade_no"]
-        db.commit()
-        return PaymentOrderResponse(
-            **payment_order.__dict__,
-            alipay_url=alipay_data.get("qr_code")
-        )
+    else:
+        raise HTTPException(status_code=400, detail="Invalid payment method")
 
 # ==================== PayPal 支付 ====================
 
 async def create_paypal_order(payment_order: PaymentOrder, product: dict) -> dict:
-    """创建 PayPal 订单"""
+    """Create PayPal order"""
     auth = base64.b64encode(f"{PAYPAL_CLIENT_ID}:{PAYPAL_CLIENT_SECRET}".encode()).decode()
     
     order_data = {
@@ -149,14 +136,14 @@ async def capture_paypal_order(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """确认 PayPal 支付"""
+    """Capture PayPal payment"""
     data = await request.json()
     order_id = data.get("orderID")
     
     if not order_id:
         raise HTTPException(status_code=400, detail="Missing orderID")
     
-    # 查找订单
+    # Find order
     payment_order = db.query(PaymentOrder).filter(
         PaymentOrder.paypal_order_id == order_id,
         PaymentOrder.user_id == current_user.id
@@ -168,7 +155,7 @@ async def capture_paypal_order(
     if payment_order.status == "paid":
         return {"success": True, "message": "Already paid"}
     
-    # 调用 PayPal API 确认支付
+    # Call PayPal API to capture payment
     auth = base64.b64encode(f"{PAYPAL_CLIENT_ID}:{PAYPAL_CLIENT_SECRET}".encode()).decode()
     
     async with httpx.AsyncClient() as client:
@@ -187,92 +174,25 @@ async def capture_paypal_order(
         
         capture_data = response.json()
         
-        # 更新订单状态
+        # Update order status
         payment_order.status = "paid"
         payment_order.paid_at = datetime.utcnow()
         payment_order.paypal_order_id = capture_data["id"]
         
-        # 发放 credits 或订阅
+        # Fulfill order (add credits/subscription)
         await fulfill_order(payment_order, current_user, db)
         
         db.commit()
         
         return {"success": True, "credits": current_user.credits}
 
-# ==================== 支付宝支付 ====================
 
-async def create_alipay_order(payment_order: PaymentOrder, product: dict, user: User) -> dict:
-    """创建支付宝订单（当面付二维码）"""
-    import hashlib
-    from Crypto.Signature import PKCS1_v1_5
-    from Crypto.Hash import SHA256
-    
-    out_trade_no = payment_order.order_no
-    total_amount = str(product["amount"] / 100)
-    
-    # 构建请求参数
-    biz_content = {
-        "out_trade_no": out_trade_no,
-        "total_amount": total_amount,
-        "subject": f"AI Poster Studio - {product['name']}",
-        "product_code": "FACE_TO_FACE_PAYMENT",
-        "qr_code_timeout_express": "30m"
-    }
-    
-    params = {
-        "app_id": ALIPY_APP_ID,
-        "method": "alipay.trade.precreate",
-        "charset": "utf-8",
-        "sign_type": "RSA2",
-        "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-        "version": "1.0",
-        "biz_content": json.dumps(biz_content, ensure_ascii=False)
-    }
-    
-    # 生成签名（简化版本，实际需要使用完整的 RSA 签名）
-    # 这里使用模拟数据，实际部署需要完整实现
-    params["sign"] = "mock_signature"
-    
-    # 调用支付宝 API（简化版本）
-    # 实际部署需要使用完整的 SDK
-    
-    return {
-        "qr_code": f"https://qr.alipay.com/{out_trade_no}",  # 模拟二维码 URL
-        "out_trade_no": out_trade_no,
-        "total_amount": total_amount
-    }
 
-@router.post("/alipay/notify")
-async def alipay_notify(request: Request, db: Session = Depends(get_db)):
-    """支付宝异步通知回调"""
-    data = await request.form()
-    
-    # 验证签名
-    # 处理支付结果
-    out_trade_no = data.get("out_trade_no")
-    trade_status = data.get("trade_status")
-    
-    if trade_status == "TRADE_SUCCESS":
-        payment_order = db.query(PaymentOrder).filter(
-            PaymentOrder.alipay_out_trade_no == out_trade_no
-        ).first()
-        
-        if payment_order and payment_order.status != "paid":
-            user = db.query(User).filter(User.id == payment_order.user_id).first()
-            payment_order.status = "paid"
-            payment_order.paid_at = datetime.utcnow()
-            payment_order.alipay_trade_no = data.get("trade_no")
-            
-            await fulfill_order(payment_order, user, db)
-            db.commit()
-    
-    return "success"
-
-# ==================== 订单履约 ====================
+# ==================== Order Fulfillment ====================
 
 async def fulfill_order(payment_order: PaymentOrder, user: User, db: Session):
-    """履行订单：发放 credits 或订阅"""
-    # 发放 credits
+    """Fulfill order: add credits or subscription"""
+    # Add credits
     if payment_order.credits_amount > 0:
         user.credits += payment_order.credits_amount
         
@@ -280,19 +200,19 @@ async def fulfill_order(payment_order: PaymentOrder, user: User, db: Session):
             user_id=user.id,
             amount=payment_order.credits_amount,
             type="purchase",
-            description=f"购买 {payment_order.product_id}"
+            description=f"Purchase {payment_order.product_id}"
         )
         db.add(txn)
     
-    # 激活订阅
+    # Activate subscription
     if payment_order.subscription_months > 0:
-        # 取消旧订阅
+        # Cancel old subscription
         db.query(Subscription).filter(
             Subscription.user_id == user.id,
             Subscription.status == "active"
         ).update({"status": "expired"})
         
-        # 创建新订阅
+        # Create new subscription
         subscription = Subscription(
             user_id=user.id,
             plan_type="pro",

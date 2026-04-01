@@ -199,7 +199,7 @@ export default function Editor() {
     setDraggingTextId(null);
   };
 
-  // 下载海报 - 使用 canvas 合成图片
+  // Download poster - Composite image using canvas
   const handleDownload = async () => {
     if (!canvasRef.current || !productImage) return;
     setIsGenerating(true);

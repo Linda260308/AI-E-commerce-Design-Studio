@@ -11,7 +11,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Handle OAuth callback - 处理 Google 登录回调
+  // Handle OAuth callback - Process Google login callback
   useEffect(() => {
     const token = router.query.token;
     const error = router.query.error;
