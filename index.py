@@ -210,12 +210,12 @@ async def get_user_stats(request: Request):
 @app.post("/api/payment/create-order")
 async def create_payment_order_api(request: Request):
     """Create payment order"""
+    print(f"[Payment API] Received create-order request", file=sys.stderr)
     try:
         from app.database import get_db
         from app.models import User, Session as UserSession, PaymentOrder
-        from app.routers.payments import create_payment_order as payment_handler
-        from fastapi import Depends
     except ImportError as e:
+        print(f"[Payment API] Import failed: {e}", file=sys.stderr)
         raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
     
     authorization = request.headers.get("authorization")
