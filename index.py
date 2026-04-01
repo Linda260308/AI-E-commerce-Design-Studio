@@ -20,7 +20,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://ai-poster-studio.vercel.app",
-        "https://ai-poster-studio-b711.vercel.app",
+        "https://ai-poster-studio-backend.vercel.app",
         "http://localhost:3000",
         "http://localhost:8000"
     ],

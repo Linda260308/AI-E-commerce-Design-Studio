@@ -3,7 +3,7 @@
   "outputDirectory": "frontend/.next",
   "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_BACKEND_URL": "https://ai-poster-studio-b711.vercel.app",
+    "NEXT_PUBLIC_BACKEND_URL": "https://ai-poster-studio-backend.vercel.app",
     "NEXT_PUBLIC_APP_URL": "https://ai-poster-studio.vercel.app"
   }
 }
