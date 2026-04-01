@@ -296,7 +296,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {/* Free Plan */}
             <div className="bg-white p-8 rounded-2xl shadow-sm border">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
@@ -312,11 +312,15 @@ export default function Home() {
                 </li>
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700">Standard resolution</span>
+                  <span className="text-gray-700">Standard resolution (1080x1080)</span>
                 </li>
                 <li className="flex items-center">
                   <span className="text-green-500 mr-2">✓</span>
                   <span className="text-gray-700">Basic templates</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-green-500 mr-2">✓</span>
+                  <span className="text-gray-700">Watermarked</span>
                 </li>
               </ul>
               <Link 
@@ -335,17 +339,17 @@ export default function Home() {
               <h3 className="text-2xl font-bold mb-2">Pro</h3>
               <p className="text-purple-100 mb-6">For growing businesses</p>
               <div className="text-4xl font-bold mb-6">
-                $29
+                $19
                 <span className="text-lg font-normal text-purple-100">/month</span>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center">
                   <span className="text-white mr-2">✓</span>
-                  <span className="text-white">100 credits per month</span>
+                  <span className="text-white">150 credits per month</span>
                 </li>
                 <li className="flex items-center">
                   <span className="text-white mr-2">✓</span>
-                  <span className="text-white">HD resolution</span>
+                  <span className="text-white">HD resolution (2048x2048)</span>
                 </li>
                 <li className="flex items-center">
                   <span className="text-white mr-2">✓</span>
@@ -353,50 +357,31 @@ export default function Home() {
                 </li>
                 <li className="flex items-center">
                   <span className="text-white mr-2">✓</span>
-                  <span className="text-white">Priority support</span>
+                  <span className="text-white">No watermark</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-white mr-2">✓</span>
+                  <span className="text-white">Batch processing (up to 5)</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-white mr-2">✓</span>
+                  <span className="text-white">Priority email support</span>
                 </li>
               </ul>
               <Link 
                 href="/signup" 
                 className="block w-full bg-white text-purple-600 text-center py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
               >
-                Start Free Trial
+                Start 7-Day Free Trial
               </Link>
             </div>
+          </div>
 
-            {/* Premium Plan */}
-            <div className="bg-white p-8 rounded-2xl shadow-sm border">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium</h3>
-              <p className="text-gray-600 mb-6">For high-volume creators</p>
-              <div className="text-4xl font-bold mb-6">
-                $99
-                <span className="text-lg font-normal text-gray-600">/month</span>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700">Unlimited credits</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700">4K resolution</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700">Custom templates</span>
-                </li>
-                <li className="flex items-center">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700">API access</span>
-                </li>
-              </ul>
-              <Link 
-                href="/signup" 
-                className="block w-full bg-purple-100 text-purple-700 text-center py-3 rounded-lg font-semibold hover:bg-purple-200 transition-colors"
-              >
-                Contact Sales
-              </Link>
-            </div>
+          {/* Annual Billing Note */}
+          <div className="text-center mt-8">
+            <p className="text-gray-600">
+              💡 Save 15% with annual billing: <span className="font-semibold text-purple-600">$199/year</span>
+            </p>
           </div>
         </section>
 
