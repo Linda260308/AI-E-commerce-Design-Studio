@@ -148,17 +148,68 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <button
-                className={`w-full py-3 px-4 rounded-lg font-semibold transition-all ${
+              <Link
+                href={plan.name === 'Free' ? '/signup' : '/profile'}
+                className={`block w-full py-3 px-4 rounded-lg font-semibold transition-all text-center ${
                   plan.highlighted
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 shadow-lg'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {plan.cta}
-              </button>
+              </Link>
             </div>
           ))}
+        </div>
+
+        {/* Credit Usage Guide */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-xl p-8 mb-16">
+          <h2 className="text-3xl font-bold text-center mb-6">💡 Credits 使用指南</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="font-semibold text-lg mb-3 text-purple-700">消耗 Credits 的操作</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2 mt-0.5">●</span>
+                  <span className="text-gray-700"><strong>AI 生成海报</strong>：1 次生成 = 1 credit</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2 mt-0.5">●</span>
+                  <span className="text-gray-700"><strong>HD 分辨率导出</strong>：额外 +1 credit/张</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-red-500 mr-2 mt-0.5">●</span>
+                  <span className="text-gray-700"><strong>批量处理</strong>：每张图独立计算</span>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-3 text-green-700">不消耗 Credits 的操作</h3>
+              <ul className="space-y-2">
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-0.5">✓</span>
+                  <span className="text-gray-700"><strong>编辑文字</strong>：添加、修改、删除文字</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-0.5">✓</span>
+                  <span className="text-gray-700"><strong>调整颜色/字体</strong>：任意修改样式</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-0.5">✓</span>
+                  <span className="text-gray-700"><strong>更换模板</strong>：切换不同设计</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-green-500 mr-2 mt-0.5">✓</span>
+                  <span className="text-gray-700"><strong>保存草稿</strong>：无限次保存</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-white rounded-lg border border-purple-200">
+            <p className="text-sm text-gray-600 text-center">
+              💡 <strong>小贴士：</strong>每月 1 号重置 credits，未用完的 credits 不结转到下月。升级套餐立即生效，赠送的 credits 当月有效。
+            </p>
+          </div>
         </div>
 
         {/* FAQ */}
@@ -174,12 +225,12 @@ export default function Pricing() {
               <p className="text-gray-600">当然可以！你可以随时取消订阅，已支付的费用不会退还，但你可以继续使用到周期结束。</p>
             </div>
             <div>
-              <h3 className="font-semibold text-lg mb-2">🎨 Credits 如何计算？</h3>
-              <p className="text-gray-600">每次 AI 生成海报消耗 1 credit。编辑文字、调整颜色、更换模板不消耗 credits。每月 1 号重置，未用完的 credits 不结转。</p>
-            </div>
-            <div>
               <h3 className="font-semibold text-lg mb-2">📧 Pro 用户有发票吗？</h3>
               <p className="text-gray-600">付款后系统会自动发送发票到你的邮箱。如需公司抬头发票，请在账户设置中填写公司信息。</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-2">🎯 Credits 用完了怎么办？</h3>
+              <p className="text-gray-600">可以在个人中心购买额外 credits 包，或升级到 Pro 套餐获得更多额度。</p>
             </div>
           </div>
         </div>
